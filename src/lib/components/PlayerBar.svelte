@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { playerState } from '$lib/stores/admin.svelte';
-	import { buildFileKey, getR2Url } from '$lib/utils/music';
+	import { buildMusicFileKey, getR2Url } from '$lib/utils/music';
 
 	let { r2PublicUrl = '' }: { r2PublicUrl?: string } = $props();
 
@@ -35,7 +35,7 @@
 	}
 
 	function getMusicUrl(track: { id: string; version: string; extension: string }): string {
-		const key = buildFileKey(track.id, track.version, track.extension);
+		const key = buildMusicFileKey(track.id, track.version, track.extension);
 		return getR2Url(key);
 	}
 

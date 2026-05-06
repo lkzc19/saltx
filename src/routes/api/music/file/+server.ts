@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { buildFileKey } from '$lib/utils/music';
+import { buildMusicFileKey } from '$lib/utils/music';
 
 const MIME_TYPES: Record<string, string> = {
 	mp3: 'audio/mpeg',
@@ -21,7 +21,7 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 		return json({ error: '缺少参数: id, version, ext' }, { status: 400 });
 	}
 
-	const fileKey = buildFileKey(id, version, ext);
+	const fileKey = buildMusicFileKey(id, version, ext);
 	const bucket = platform!.env.BUCKET;
 	const object = await bucket.get(fileKey);
 

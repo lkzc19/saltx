@@ -1,9 +1,9 @@
-export function buildFileKey(id: string, version: string, extension: string): string {
-	return `${id}/${version}.${extension}`;
+export function buildMusicFileKey(id: string, version: string, extension: string): string {
+	return `music/${id}/${version}.${extension}`;
 }
 
 export function buildImageFileKey(id: string, extension: string): string {
-	return `${id}.${extension}`;
+	return `image/${id}.${extension}`;
 }
 
 export function getR2Url(fileKey: string): string {
@@ -17,6 +17,6 @@ export function getImageUrl(image: { id: string; extension: string }): string {
 }
 
 export function getThumbnailUrl(image: { id: string }): string {
-	const fileKey = `${image.id}_thumb.jpg`; //缩略图固定 jpg
+	const fileKey = `image/${image.id}_thumb.jpg`; //缩略图固定 jpg
 	return getR2Url(fileKey);
 }

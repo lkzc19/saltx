@@ -1,12 +1,12 @@
 <script lang="ts">
 	import type { Music } from '$lib/types/music';
-	import { buildFileKey } from '$lib/utils/music';
+	import { buildMusicFileKey } from '$lib/utils/music';
 	import { formatDate } from '$lib/utils/date';
 	import { adminState } from '$lib/stores/admin.svelte';
 
 	let { music }: { music: Music | null } = $props();
 
-	let fileKey = $derived(music ? buildFileKey(music.id, music.version, music.extension) : '');
+	let fileKey = $derived(music ? buildMusicFileKey(music.id, music.version, music.extension) : '');
 </script>
 
 {#if music}

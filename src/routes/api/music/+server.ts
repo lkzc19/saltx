@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 import { music, nanoid8 } from '$lib/server/db/schema';
-import { buildFileKey } from '$lib/utils/music';
+import { buildMusicFileKey } from '$lib/utils/music';
 import type { RequestHandler } from './$types';
 
 function getExtension(filename: string): string {
@@ -31,7 +31,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 
 	const id = nanoid8();
 	const ext = getExtension(file.name);
-	const fileKey = buildFileKey(id, version, ext);
+	const fileKey = buildMusicFileKey(id, version, ext);
 
 	const bucket = platform!.env.BUCKET;
 	const db = getDb(platform!.env.DB);
