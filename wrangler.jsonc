@@ -11,8 +11,6 @@
 	"workers_dev": true,
 	"preview_urls": true,
 
-	// D1 和 R2 配置（本地开发和线上部署共用）
-	// 本地开发用 wrangler dev，部署用 wrangler deploy
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -25,5 +23,21 @@
 			"binding": "BUCKET",
 			"bucket_name": "saltx"
 		}
-	]
+	],
+
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1,
+		"logs": {
+			"enabled": true,
+			"head_sampling_rate": 1,
+			"persist": true,
+			"invocation_logs": true
+		},
+		"traces": {
+			"enabled": true,
+			"persist": true,
+			"head_sampling_rate": 1
+		}
+	}
 }
