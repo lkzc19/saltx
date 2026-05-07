@@ -49,10 +49,10 @@
 <div class="flex h-full">
 	<div class="flex min-w-0 flex-1 flex-col p-6">
 		<ImageSearchBar filters={data.filters} onsearch={handleSearch} onupload={() => (uploadOpen = true)} />
-		<ImageGrid items={data.items} r2PublicUrl={data.r2PublicUrl} onselect={handleSelect} />
+		<ImageGrid items={data.items} onselect={handleSelect} />
 		<Pagination page={data.page} pageSize={data.pageSize} total={data.total} totalPages={data.totalPages} onchange={handlePageChange} />
 	</div>
 </div>
 
-<ImagePreview image={previewImage} r2PublicUrl={data.r2PublicUrl} onclose={() => (previewImage = null)} ondelete={handleDelete} />
+<ImagePreview image={previewImage} onclose={() => (previewImage = null)} ondelete={handleDelete} />
 <ImageUploadModal bind:open={uploadOpen} onuploaded={handleUploaded} />

@@ -3,7 +3,6 @@
 	import { playerState } from '$lib/stores/admin.svelte';
 	import { buildMusicFileKey, getR2Url } from '$lib/utils/music';
 
-	let { r2PublicUrl = '' }: { r2PublicUrl?: string } = $props();
 
 	class Howl {
 		constructor(_opts: any) {}
@@ -122,6 +121,18 @@
 {#if track}
 	<div class="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center border-t border-border bg-bg-card px-4" style="backdrop-filter: blur(12px);">
 		<div class="flex items-center gap-3">
+			<!-- 封面 -->
+			<div class="h-9 w-9 shrink-0 overflow-hidden rounded border border-border bg-bg-primary">
+				{#if track.cover_file_key}
+					<img src={`/files/${track.cover_file_key}`} alt="" class="h-full w-full object-cover" />
+				{:else}
+					<div class="flex h-full w-full items-center justify-center text-text-disabled">
+						<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+							<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+						</svg>
+					</div>
+				{/if}
+			</div>
 			<button
 				onclick={togglePlay}
 				class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-text transition-colors hover:text-primary"

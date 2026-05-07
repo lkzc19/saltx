@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Music } from '$lib/types/music';
+	import { getThumbnailUrl } from '$lib/utils/music';
 	import { formatDate } from '$lib/utils/date';
 
 	let {
@@ -22,6 +23,7 @@
 		<thead>
 			<tr class="border-b border-border bg-bg-card text-left text-xs text-text-muted">
 				<th class="w-12 px-4 py-3 font-medium"></th>
+				<th class="w-10 px-2 py-3 font-medium"></th>
 				<th class="px-4 py-3 font-medium">ID</th>
 				<th class="px-4 py-3 font-medium">名称</th>
 				<th class="px-4 py-3 font-medium">艺术家</th>
@@ -33,13 +35,18 @@
 		<tbody>
 			{#each items as item (item.id)}
 				<tr
-					class="cursor-pointer border-b border-border transition-colors hover:bg-[var(--highlight-bg)]"
-					style={selectedId === item.id ? 'background: var(--highlight-bg); border-left: 2px solid var(--highlight-border)' : ''}
+					class="cursor-pointer border-b border-border transition-colors hover:bg-(--highlight-bg)"
+					style={selectedId === item.id
+						? 'background: var(--highlight-bg); border-left: 2px solid var(--highlight-border)'
+						: ''}
 					onclick={() => onselect(item)}
 				>
 					<td class="px-4 py-3">
 						<button
-							onclick={(e) => { e.stopPropagation(); onplay(item); }}
+							onclick={(e) => {
+								e.stopPropagation();
+								onplay(item);
+							}}
 							class="flex h-7 w-7 items-center justify-center rounded-full text-text-muted transition-colors hover:text-primary"
 							class:text-primary={playingId === item.id}
 							aria-label="播放 {item.name}"
@@ -55,6 +62,23 @@
 							{/if}
 						</button>
 					</td>
+					<td class="px-2 py-3">
+						<div class="h-8 w-8 overflow-hidden rounded border border-border bg-bg-card">
+							{#if item.cover_file_key}
+								<img
+									src={`/files/${item.cover_file_key}`}
+									alt=""
+									class="h-full w-full object-cover"
+								/>
+							{:else}
+								<div class="flex h-full w-full items-center justify-center text-text-disabled">
+									<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+										<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+									</svg>
+								</div>
+							{/if}
+						</div>
+					</td>
 					<td class="px-4 py-3 font-mono text-xs text-text-muted">{item.id}</td>
 					<td class="px-4 py-3 text-text">{item.name}</td>
 					<td class="px-4 py-3 text-text-muted">{item.artist}</td>
@@ -68,7 +92,7 @@
 				</tr>
 			{:else}
 				<tr>
-					<td colspan="7" class="px-4 py-12 text-center text-text-disabled">暂无数据</td>
+					<td colspan="8" class="px-4 py-12 text-center text-text-disabled">暂无数据</td>
 				</tr>
 			{/each}
 		</tbody>

@@ -18,10 +18,7 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 
 	const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-	const [{ total }] = await db
-		.select({ total: count() })
-		.from(music)
-		.where(where);
+	const [{ total }] = await db.select({ total: count() }).from(music).where(where);
 
 	const items = await db
 		.select()

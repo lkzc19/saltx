@@ -4,6 +4,7 @@ export interface Music {
 	artist: string;
 	version: string;
 	extension: string;
+	cover_file_key: string | null;
 	created_at: string;
 	updated_at: string;
 }

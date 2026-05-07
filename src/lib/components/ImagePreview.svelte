@@ -2,7 +2,7 @@
 	import { buildImageFileKey, getR2Url } from '$lib/utils/music';
 	import type { Image } from '$lib/types/music';
 
-	let { image, r2PublicUrl = '', onclose, ondelete }: { image: Image | null; r2PublicUrl?: string; onclose: () => void; ondelete: (id: string) => void } = $props();
+	let { image, onclose, ondelete }: { image: Image | null; onclose: () => void; ondelete: (id: string) => void } = $props();
 
 	function getOriginalUrl(): string {
 		if (!image) return '';

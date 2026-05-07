@@ -19,6 +19,7 @@ export const music = sqliteTable('music', {
 	artist: text('artist').notNull(),
 	version: text('version').notNull(),
 	extension: text('extension').notNull(),
+	cover_file_key: text('cover_file_key'),
 	created_at: text('created_at')
 		.notNull()
 		.$defaultFn(() => new Date().toISOString()),

@@ -1,12 +1,9 @@
 <script lang="ts">
-	import { setContext } from 'svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import PlayerBar from '$lib/components/PlayerBar.svelte';
 	import { adminState, playerState } from '$lib/stores/admin.svelte';
 
-	let { data, children } = $props();
-
-	setContext('r2PublicUrl', data.r2PublicUrl);
+	let { children } = $props();
 </script>
 
 <div class="flex h-screen overflow-hidden bg-bg-primary">
@@ -21,4 +18,4 @@
 	</main>
 </div>
 
-<PlayerBar r2PublicUrl={data.r2PublicUrl} />
+<PlayerBar />

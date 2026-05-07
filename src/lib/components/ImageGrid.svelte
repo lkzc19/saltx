@@ -4,11 +4,9 @@
 
 	let {
 		items,
-		r2PublicUrl = '',
 		onselect
 	}: {
 		items: Image[];
-		r2PublicUrl?: string;
 		onselect: (item: Image) => void;
 	} = $props();
 
