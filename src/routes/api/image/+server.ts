@@ -3,6 +3,7 @@ import { getDb } from '$lib/server/db';
 import { image, nanoid8 } from '$lib/server/db/schema';
 import { buildImageFileKey } from '$lib/utils/music';
 import { eq } from 'drizzle-orm';
+import { optimizeImage } from 'wasm-image-optimization';
 import type { RequestHandler } from './$types';
 
 function getExtension(filename: string): string {
@@ -29,10 +30,12 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	const aspectRatio = formData.get('aspect_ratio')?.toString() ?? '1:1';
 	const file = formData.get('file') as File | null;
 
-	if (!name || !file) {
-		const missing = [!name && 'name', !file && 'file'].filter(Boolean).join(', ');
-		return json({ error: `缺少必填字段: ${missing}` }, { status: 400 });
+	if (!file) {
+		return json({ error: '缺少必填字段: file' }, { status: 400 });
 	}
+
+	// 如果没有提供名称，使用文件名
+	const fileName = name ?? file.name.replace(/\.[^/.]+$/, '');
 
 	if (aspectRatio !== '1:1') {
 		return json({ error: '暂仅支持 1:1 比例' }, { status: 400 });
@@ -51,13 +54,34 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 		httpMetadata: { contentType: file.type }
 	});
 
+	// 生成缩略图
+	let thumbnailKey: string | undefined;
+	try {
+		const thumbnail = await optimizeImage({
+			image: new Uint8Array(arrayBuffer),
+			width: 200,
+			height: 200,
+			fit: 'cover',
+			format: 'webp',
+			quality: 80
+		});
+		thumbnailKey = `image/${id}_thumb.webp`;
+		console.log('Uploading thumbnail:', thumbnailKey, 'size:', thumbnail.data.length);
+		await bucket.put(thumbnailKey, thumbnail.data, {
+			httpMetadata: { contentType: 'image/webp' }
+		});
+	} catch (e) {
+		console.error('Thumbnail generation failed:', e);
+	}
+
 	const record = await db
 		.insert(image)
 		.values({
 			id,
-			name,
+			name: fileName,
 			extension: ext,
-			aspect_ratio: aspectRatio
+			aspect_ratio: aspectRatio,
+			thumbnail_key: thumbnailKey
 		})
 		.returning()
 		.get();

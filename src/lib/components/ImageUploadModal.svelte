@@ -15,7 +15,7 @@
 	let uploading = $state(false);
 	let error = $state('');
 
-	let canSubmit = $derived(!!name && !!file && !uploading);
+	let canSubmit = $derived(!!file && !uploading);
 
 	function reset() {
 		name = '';
@@ -37,7 +37,7 @@
 
 		try {
 			const formData = new FormData();
-			formData.set('name', name);
+			if (name) formData.set('name', name);
 			formData.set('file', file!);
 
 			const res = await fetch('/api/image', { method: 'POST', body: formData });
@@ -71,10 +71,6 @@
 
 			<form onsubmit={handleSubmit} class="space-y-4">
 				<div>
-					<label class="mb-1.5 block text-xs text-text-disabled">名称</label>
-					<input type="text" bind:value={name} placeholder="图片名称" class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary" />
-				</div>
-				<div>
 					<label class="mb-1.5 block text-xs text-text-disabled">文件</label>
 					<label class="flex h-24 cursor-pointer items-center justify-center rounded-md border border-border bg-bg-primary transition-colors hover:border-text-disabled">
 						{#if file}
@@ -92,6 +88,10 @@
 						{/if}
 						<input type="file" accept="image/*" class="hidden" onchange={(e) => (file = (e.target as HTMLInputElement).files?.[0] ?? null)} />
 					</label>
+				</div>
+				<div>
+					<label class="mb-1.5 block text-xs text-text-disabled">名称（可选）</label>
+					<input type="text" bind:value={name} placeholder={file?.name ?? "图片名称"} class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary" />
 				</div>
 
 				{#if error}

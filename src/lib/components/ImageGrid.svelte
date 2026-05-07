@@ -13,7 +13,7 @@
 	} = $props();
 
 	function getThumbnailUrl(item: Image): string {
-		const key = `${item.id}_thumb.jpg`;
+		const key = `image/${item.id}_thumb.webp`;
 		return getR2Url(key);
 	}
 </script>
