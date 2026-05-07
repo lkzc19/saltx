@@ -34,6 +34,7 @@ export const image = sqliteTable('image', {
 	name: text('name').notNull(),
 	extension: text('extension').notNull(),
 	aspect_ratio: text('aspect_ratio').notNull(),
+	file_key: text('file_key'),
 	thumbnail_key: text('thumbnail_key'),
 	created_at: text('created_at')
 		.notNull()

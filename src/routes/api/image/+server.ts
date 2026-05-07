@@ -3,24 +3,11 @@ import { getDb } from '$lib/server/db';
 import { image, nanoid8 } from '$lib/server/db/schema';
 import { buildImageFileKey } from '$lib/utils/music';
 import { eq } from 'drizzle-orm';
-import { optimizeImage } from 'wasm-image-optimization';
 import type { RequestHandler } from './$types';
 
 function getExtension(filename: string): string {
 	const dot = filename.lastIndexOf('.');
 	return dot === -1 ? '' : filename.slice(dot + 1);
-}
-
-const MIME_TYPE_MAP: Record<string, string> = {
-	jpg: 'image/jpeg',
-	jpeg: 'image/jpeg',
-	png: 'image/png',
-	gif: 'image/gif',
-	webp: 'image/webp'
-};
-
-function getMimeType(ext: string): string {
-	return MIME_TYPE_MAP[ext] ?? 'image/jpeg';
 }
 
 export const POST: RequestHandler = async ({ request, platform }) => {
@@ -29,18 +16,17 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	const name = formData.get('name')?.toString();
 	const aspectRatio = formData.get('aspect_ratio')?.toString() ?? '1:1';
 	const file = formData.get('file') as File | null;
+	const thumbnail = formData.get('thumbnail') as File | null;
 
 	if (!file) {
 		return json({ error: '缺少必填字段: file' }, { status: 400 });
 	}
 
-	// 如果没有提供名称，使用文件名
-	const fileName = name ?? file.name.replace(/\.[^/.]+$/, '');
-
 	if (aspectRatio !== '1:1') {
 		return json({ error: '暂仅支持 1:1 比例' }, { status: 400 });
 	}
 
+	const fileName = name ?? file.name.replace(/\.[^/.]+$/, '');
 	const id = nanoid8();
 	const ext = getExtension(file.name);
 	const fileKey = buildImageFileKey(id, ext);
@@ -48,30 +34,16 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	const bucket = platform!.env.BUCKET;
 	const db = getDb(platform!.env.DB);
 
-	// 上传原图
-	const arrayBuffer = await file.arrayBuffer();
-	await bucket.put(fileKey, arrayBuffer, {
+	await bucket.put(fileKey, await file.arrayBuffer(), {
 		httpMetadata: { contentType: file.type }
 	});
 
-	// 生成缩略图
 	let thumbnailKey: string | undefined;
-	try {
-		const thumbnail = await optimizeImage({
-			image: new Uint8Array(arrayBuffer),
-			width: 200,
-			height: 200,
-			fit: 'cover',
-			format: 'webp',
-			quality: 80
-		});
+	if (thumbnail) {
 		thumbnailKey = `image/${id}_thumb.webp`;
-		console.log('Uploading thumbnail:', thumbnailKey, 'size:', thumbnail.data.length);
-		await bucket.put(thumbnailKey, thumbnail.data, {
+		await bucket.put(thumbnailKey, await thumbnail.arrayBuffer(), {
 			httpMetadata: { contentType: 'image/webp' }
 		});
-	} catch (e) {
-		console.error('Thumbnail generation failed:', e);
 	}
 
 	const record = await db
@@ -81,6 +53,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			name: fileName,
 			extension: ext,
 			aspect_ratio: aspectRatio,
+			file_key: fileKey,
 			thumbnail_key: thumbnailKey
 		})
 		.returning()
@@ -140,7 +113,8 @@ export const DELETE: RequestHandler = async ({ url, platform }) => {
 
 	const bucket = platform!.env.BUCKET;
 	// 删除原图
-	await bucket.delete(buildImageFileKey(existing.id, existing.extension));
+	const fileKey = existing.file_key ?? buildImageFileKey(existing.id, existing.extension);
+	await bucket.delete(fileKey);
 	// 删除缩略图
 	if (existing.thumbnail_key) {
 		await bucket.delete(existing.thumbnail_key);

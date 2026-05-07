@@ -6,7 +6,7 @@
 
 	function getOriginalUrl(): string {
 		if (!image) return '';
-		const key = buildImageFileKey(image.id, image.extension);
+		const key = image.file_key ?? buildImageFileKey(image.id, image.extension);
 		return getR2Url(key);
 	}
 </script>

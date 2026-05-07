@@ -13,6 +13,7 @@ export interface Image {
 	name: string;
 	extension: string;
 	aspect_ratio: string;
+	file_key: string | null;
 	thumbnail_key: string | null;
 	created_at: string;
 	updated_at: string;
