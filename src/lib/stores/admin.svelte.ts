@@ -14,3 +14,23 @@ export const playerState = writable({
 	duration: 0,
 	currentTime: 0
 });
+
+// 音频控制回调，由 PlayerBar 注册
+let _togglePlay: (() => void) | null = null;
+let _seek: ((time: number) => void) | null = null;
+
+export function registerPlayerControls(
+	togglePlay: () => void,
+	seek: (time: number) => void
+) {
+	_togglePlay = togglePlay;
+	_seek = seek;
+}
+
+export function requestTogglePlay() {
+	_togglePlay?.();
+}
+
+export function requestSeek(time: number) {
+	_seek?.(time);
+}

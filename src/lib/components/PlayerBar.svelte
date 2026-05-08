@@ -1,174 +1,112 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { playerState } from '$lib/stores/admin.svelte';
+	import { onMount } from 'svelte';
+	import { playerState, registerPlayerControls } from '$lib/stores/admin.svelte';
 	import { buildMusicFileKey, getR2Url } from '$lib/utils/music';
-
-
-	class Howl {
-		constructor(_opts: any) {}
-		play() {}
-		pause() {}
-		stop() {}
-		unload() {}
-		state() { return 'loaded'; }
-		seek(_pos?: number) { return 0; }
-		duration() { return 0; }
-	}
-
-	let sound: any = null;
-	let dragging = false;
-	let animFrame = 0;
-
-	let track = $derived($playerState.currentTrack);
-	let playing = $derived($playerState.playing);
-	let duration = $derived($playerState.duration);
-	let currentTime = $derived($playerState.currentTime);
-	let progress = $derived(duration > 0 ? (currentTime / duration) * 100 : 0);
-
-	// 动态 import howler（只在浏览器）
-	let HowlClass: any = null;
-	if (browser) {
-		import('howler').then((m) => {
-			HowlClass = m.Howl;
-		});
-	}
+	import { get } from 'svelte/store';
 
 	function getMusicUrl(track: { id: string; version: string; extension: string }): string {
-		const key = buildMusicFileKey(track.id, track.version, track.extension);
-		return getR2Url(key);
+		return getR2Url(buildMusicFileKey(track.id, track.version, track.extension));
 	}
 
-	function formatTime(s: number): string {
-		if (!isFinite(s) || s < 0) return '0:00';
-		const m = Math.floor(s / 60);
-		const sec = Math.floor(s % 60);
-		return `${m}:${sec.toString().padStart(2, '0')}`;
-	}
+	onMount(() => {
+		if (!browser) return;
 
-	function updateTime() {
-		if (sound && sound.state() === 'loaded') {
-			playerState.update((s) => ({ ...s, currentTime: sound!.seek() as number }));
-		}
-		animFrame = requestAnimationFrame(updateTime);
-	}
+		let HowlClass: any = null;
+		let sound: any = null;
+		let animFrame = 0;
+		let currentTrackId: string | null = null;
 
-	$effect(() => {
-		const t = track;
-		if (!t || !HowlClass) return;
-
-		if (sound) {
-			sound.unload();
-			cancelAnimationFrame(animFrame);
+		function updateTime() {
+			if (sound && sound.state() === 'loaded') {
+				playerState.update((s) => ({ ...s, currentTime: sound.seek() as number }));
+			}
+			animFrame = requestAnimationFrame(updateTime);
 		}
 
-		const url = getMusicUrl(t);
-		const howl = new HowlClass({
-			src: [url],
-			html5: true,
-			onplay() {
-				playerState.update((s) => ({ ...s, playing: true }));
-				animFrame = requestAnimationFrame(updateTime);
-			},
-			onpause() {
-				playerState.update((s) => ({ ...s, playing: false }));
+		function togglePlay() {
+			if (!sound) return;
+			if (get(playerState).playing) {
+				sound.pause();
+			} else {
+				sound.play();
+			}
+		}
+
+		function seekTo(time: number) {
+			if (sound && sound.state() === 'loaded') {
+				sound.seek(time);
+			}
+		}
+
+		registerPlayerControls(togglePlay, seekTo);
+
+		function loadTrack(track: { id: string; version: string; extension: string } | null) {
+			if (sound) {
+				sound.unload();
 				cancelAnimationFrame(animFrame);
-			},
-			onstop() {
-				playerState.update((s) => ({ ...s, playing: false, currentTime: 0 }));
-				cancelAnimationFrame(animFrame);
-			},
-			onend() {
-				playerState.update((s) => ({ ...s, playing: false, currentTime: 0 }));
-				cancelAnimationFrame(animFrame);
-			},
-			onload() {
-				playerState.update((s) => ({ ...s, duration: howl.duration() }));
-			},
-			onloaderror(_id: any, err: any) {
-				console.error('Howler load error:', err);
-			},
-			onplayerror(_id: any, err: any) {
-				console.error('Howler play error:', err);
+				sound = null;
+			}
+			if (!track || !HowlClass) return;
+
+			const howl = new HowlClass({
+				src: [getMusicUrl(track)],
+				onplay() {
+					playerState.update((s) => ({ ...s, playing: true }));
+					animFrame = requestAnimationFrame(updateTime);
+				},
+				onpause() {
+					playerState.update((s) => ({ ...s, playing: false }));
+					cancelAnimationFrame(animFrame);
+				},
+				onstop() {
+					playerState.update((s) => ({ ...s, playing: false, currentTime: 0 }));
+					cancelAnimationFrame(animFrame);
+				},
+				onend() {
+					playerState.update((s) => ({ ...s, playing: false, currentTime: 0 }));
+					cancelAnimationFrame(animFrame);
+				},
+				onload() {
+					playerState.update((s) => ({ ...s, duration: howl.duration() }));
+				},
+				onloaderror(_id: any, err: any) {
+					console.error('Howler load error:', err);
+				},
+				onplayerror(_id: any, err: any) {
+					console.error('Howler play error:', err);
+				}
+			});
+			sound = howl;
+			howl.play();
+		}
+
+		// 手动订阅，仅在 track id 变化时重新加载
+		const unsubscribe = playerState.subscribe((state) => {
+			const newId = state.currentTrack?.id ?? null;
+			if (newId !== currentTrackId) {
+				currentTrackId = newId;
+				if (HowlClass) {
+					loadTrack(state.currentTrack);
+				}
 			}
 		});
 
-		sound = howl;
-		howl.play();
+		// 加载 Howler，若此时已有待播 track 立即加载
+		import('howler').then((m) => {
+			HowlClass = m.Howl;
+			const state = get(playerState);
+			if (state.currentTrack && currentTrackId === state.currentTrack.id) {
+				loadTrack(state.currentTrack);
+			}
+		});
 
 		return () => {
-			howl.unload();
-			cancelAnimationFrame(animFrame);
+			unsubscribe();
+			if (sound) {
+				sound.unload();
+				cancelAnimationFrame(animFrame);
+			}
 		};
 	});
-
-	function togglePlay() {
-		if (!sound) return;
-		if (playing) {
-			sound.pause();
-		} else {
-			sound.play();
-		}
-	}
-
-	function handleProgressClick(e: MouseEvent) {
-		if (!sound || !duration) return;
-		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-		const ratio = (e.clientX - rect.left) / rect.width;
-		sound.seek(ratio * duration);
-	}
 </script>
-
-{#if track}
-	<div class="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center border-t border-border bg-bg-card px-4" style="backdrop-filter: blur(12px);">
-		<div class="flex items-center gap-3">
-			<!-- 封面 -->
-			<div class="h-9 w-9 shrink-0 overflow-hidden rounded border border-border bg-bg-primary">
-				{#if track.cover_file_key}
-					<img src={`/files/${track.cover_file_key}`} alt="" class="h-full w-full object-cover" />
-				{:else}
-					<div class="flex h-full w-full items-center justify-center text-text-disabled">
-						<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-							<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
-						</svg>
-					</div>
-				{/if}
-			</div>
-			<button
-				onclick={togglePlay}
-				class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-text transition-colors hover:text-primary"
-			>
-				{#if playing}
-					<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-						<path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-					</svg>
-				{:else}
-					<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-						<path d="M8 5v14l11-7z" />
-					</svg>
-				{/if}
-			</button>
-			<div class="min-w-0">
-				<p class="truncate text-sm text-text">{track.name}</p>
-				<p class="truncate text-xs text-text-muted">{track.artist} · {track.version}</p>
-			</div>
-		</div>
-
-		<div class="mx-6 flex flex-1 items-center gap-3">
-			<span class="w-10 text-right font-mono text-xs text-text-disabled">{formatTime(currentTime)}</span>
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div
-				class="group relative h-1 flex-1 cursor-pointer rounded-full bg-border"
-				onclick={handleProgressClick}
-				onmousedown={() => (dragging = true)}
-				onmouseup={() => (dragging = false)}
-			>
-				<div class="h-full rounded-full bg-primary transition-[width]" style="width: {progress}%"></div>
-				<div
-					class="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-primary opacity-0 transition-opacity group-hover:opacity-100"
-					style="left: calc({progress}% - 6px)"
-				></div>
-			</div>
-			<span class="w-10 font-mono text-xs text-text-disabled">{formatTime(duration)}</span>
-		</div>
-	</div>
-{/if}

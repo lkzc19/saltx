@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { playerState, requestTogglePlay } from '$lib/stores/admin.svelte';
 
 	let { collapsed = $bindable(false) } = $props();
 
@@ -9,9 +10,11 @@
 	];
 
 	function isActive(href: string): boolean {
-		const pathname: string = page.url.pathname;
-		return pathname.startsWith(href);
+		return (page.url.pathname as string).startsWith(href);
 	}
+
+	let track = $derived($playerState.currentTrack);
+	let playing = $derived($playerState.playing);
 </script>
 
 <aside
@@ -19,6 +22,7 @@
 	class:w-16={collapsed}
 	class:w-56={!collapsed}
 >
+	<!-- 顶部 Logo / 折叠按钮 -->
 	<div class="flex h-14 items-center justify-between border-b border-border px-4">
 		{#if !collapsed}
 			<span class="text-sm font-semibold text-primary">SALT X</span>
@@ -26,6 +30,7 @@
 		<button
 			onclick={() => (collapsed = !collapsed)}
 			class="flex h-8 w-8 items-center justify-center rounded text-text-muted transition-colors hover:bg-border hover:text-text"
+			aria-label="切换侧边栏"
 		>
 			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				{#if collapsed}
@@ -37,6 +42,7 @@
 		</button>
 	</div>
 
+	<!-- 导航 -->
 	<nav class="flex-1 overflow-y-auto py-3">
 		{#each navItems as item}
 			<a
@@ -65,4 +71,88 @@
 			</a>
 		{/each}
 	</nav>
+
+	<!-- 底部播放区 -->
+	<div class="border-t border-border">
+		{#if collapsed}
+			<!-- 收起：封面 + 播放/暂停 overlay -->
+			<div class="flex h-16 items-center justify-center">
+				{#if track}
+					<button
+						onclick={requestTogglePlay}
+						class="group relative h-11 w-11 overflow-hidden rounded-lg border border-border"
+						aria-label={playing ? '暂停' : '播放'}
+					>
+						{#if track.cover_file_key}
+							<img src={`/files/${track.cover_file_key}`} alt="" class="h-full w-full object-cover" />
+						{:else}
+							<div class="flex h-full w-full items-center justify-center bg-bg-primary text-text-disabled">
+								<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+									<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+								</svg>
+							</div>
+						{/if}
+						<div class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+							{#if playing}
+								<svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+									<path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+								</svg>
+							{:else}
+								<svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+									<path d="M8 5v14l11-7z" />
+								</svg>
+							{/if}
+						</div>
+					</button>
+				{:else}
+					<div class="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-bg-primary text-text-disabled">
+						<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+							<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+						</svg>
+					</div>
+				{/if}
+			</div>
+		{:else}
+			<!-- 展开：封面 + 歌名/歌手 + 播放按钮 -->
+			<div class="flex h-16 items-center gap-2.5 px-3">
+				<div class="h-10 w-10 shrink-0 overflow-hidden rounded border border-border bg-bg-primary">
+					{#if track?.cover_file_key}
+						<img src={`/files/${track.cover_file_key}`} alt="" class="h-full w-full object-cover" />
+					{:else}
+						<div class="flex h-full w-full items-center justify-center text-text-disabled">
+							<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+								<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+							</svg>
+						</div>
+					{/if}
+				</div>
+				<div class="min-w-0 flex-1">
+					{#if track}
+						<p class="truncate text-xs font-medium text-text">{track.name}</p>
+						<p class="truncate text-xs text-text-muted">{track.artist}</p>
+					{:else}
+						<p class="text-xs text-text-disabled">暂无播放</p>
+					{/if}
+				</div>
+				<button
+					onclick={track ? requestTogglePlay : undefined}
+					disabled={!track}
+					class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors"
+					class:hover:text-primary={!!track}
+					class:opacity-30={!track}
+					aria-label={playing ? '暂停' : '播放'}
+				>
+					{#if playing}
+						<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+							<path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+						</svg>
+					{:else}
+						<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+							<path d="M8 5v14l11-7z" />
+						</svg>
+					{/if}
+				</button>
+			</div>
+		{/if}
+	</div>
 </aside>

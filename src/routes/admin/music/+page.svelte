@@ -41,7 +41,6 @@
 
 	function handleSaved(updated: Music) {
 		adminState.selectedMusic = updated;
-		// 如果正在播放该曲目，同步更新播放状态中的 track 信息
 		if ($playerState.currentTrack?.id === updated.id) {
 			playerState.update((s) => ({ ...s, currentTrack: updated }));
 		}
@@ -62,25 +61,27 @@
 	<title>音乐管理 - SALT X</title>
 </svelte:head>
 
-<div class="flex h-full">
-	<div class="flex min-w-0 flex-1 flex-col p-6">
-		<SearchBar filters={data.filters} onsearch={handleSearch} onupload={() => (uploadOpen = true)} />
-		<MusicTable
-			items={data.items}
-			selectedId={adminState.selectedMusic?.id ?? null}
-			playingId={$playerState.currentTrack?.id ?? null}
-			onselect={(item) => (adminState.selectedMusic = item)}
-			onplay={handlePlay}
-		/>
-		<Pagination
-			page={data.page}
-			pageSize={data.pageSize}
-			total={data.total}
-			totalPages={data.totalPages}
-			onchange={handlePageChange}
-		/>
+<div class="flex h-full flex-col">
+	<div class="flex min-h-0 flex-1">
+		<div class="flex min-w-0 flex-1 flex-col p-6">
+			<SearchBar filters={data.filters} onsearch={handleSearch} onupload={() => (uploadOpen = true)} />
+			<MusicTable
+				items={data.items}
+				selectedId={adminState.selectedMusic?.id ?? null}
+				playingId={$playerState.currentTrack?.id ?? null}
+				onselect={(item) => (adminState.selectedMusic = item)}
+				onplay={handlePlay}
+			/>
+			<Pagination
+				page={data.page}
+				pageSize={data.pageSize}
+				total={data.total}
+				totalPages={data.totalPages}
+				onchange={handlePageChange}
+			/>
+		</div>
+		<MusicDetail music={adminState.selectedMusic} onsaved={handleSaved} ondeleted={handleDeleted} />
 	</div>
-	<MusicDetail music={adminState.selectedMusic} onsaved={handleSaved} ondeleted={handleDeleted} />
 </div>
 
 <UploadModal bind:open={uploadOpen} onuploaded={handleUploaded} />
