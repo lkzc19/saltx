@@ -1,12 +1,13 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import ImageGrid from '$lib/components/ImageGrid.svelte';
 	import ImagePreview from '$lib/components/ImagePreview.svelte';
 	import ImageUploadModal from '$lib/components/ImageUploadModal.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
 	import ImageSearchBar from '$lib/components/ImageSearchBar.svelte';
-	import { adminState } from '$lib/stores/admin.svelte';
 	import type { Image } from '$lib/types/music';
 
 	let { data } = $props();
@@ -14,16 +15,18 @@
 	let previewImage = $state<Image | null>(null);
 
 	function handleSearch(filters: { name: string }) {
-		const params = new URLSearchParams();
-		if (filters.name) params.set('name', filters.name);
-		goto(`/admin/image?${params.toString()}`);
+		if (filters.name) {
+			goto(resolve(`/admin/image?name=${encodeURIComponent(filters.name)}`));
+		} else {
+			goto(resolve('/admin/image'));
+		}
 	}
 
 	function handlePageChange(p: number, ps: number) {
-		const params = new URLSearchParams(page.url.searchParams);
-		params.set('page', String(p));
-		if (ps !== data.pageSize) params.set('pageSize', String(ps));
-		goto(`/admin/image?${params.toString()}`);
+		const sp = new SvelteURLSearchParams(page.url.searchParams);
+		sp.set('page', String(p));
+		if (ps !== data.pageSize) sp.set('pageSize', String(ps));
+		goto(resolve(`/admin/image?${sp.toString()}`));
 	}
 
 	function handleSelect(item: Image) {
@@ -31,14 +34,14 @@
 	}
 
 	function handleUploaded() {
-		goto(page.url.href, { invalidateAll: true });
+		invalidateAll();
 	}
 
 	async function handleDelete(id: string) {
 		if (!confirm('确定要删除这张图片吗？')) return;
 		await fetch(`/api/admin/image?id=${id}`, { method: 'DELETE' });
 		previewImage = null;
-		goto(page.url.href, { invalidateAll: true });
+		invalidateAll();
 	}
 </script>
 

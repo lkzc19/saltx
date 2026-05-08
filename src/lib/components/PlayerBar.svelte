@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
+	import type { Howl } from 'howler';
 	import { playerState, registerPlayerControls } from '$lib/stores/admin.svelte';
 	import { buildMusicFileKey, getR2Url } from '$lib/utils/music';
 	import { get } from 'svelte/store';
@@ -12,14 +13,15 @@
 	onMount(() => {
 		if (!browser) return;
 
-		let HowlClass: any = null;
-		let sound: any = null;
+		let HowlClass: typeof Howl | null = null;
+		let sound: Howl | null = null;
 		let animFrame = 0;
 		let currentTrackId: string | null = null;
 
 		function updateTime() {
 			if (sound && sound.state() === 'loaded') {
-				playerState.update((s) => ({ ...s, currentTime: sound.seek() as number }));
+				const s = sound;
+				playerState.update((st) => ({ ...st, currentTime: s.seek() as number }));
 			}
 			animFrame = requestAnimationFrame(updateTime);
 		}
@@ -70,10 +72,10 @@
 				onload() {
 					playerState.update((s) => ({ ...s, duration: howl.duration() }));
 				},
-				onloaderror(_id: any, err: any) {
+				onloaderror(_id: number, err: unknown) {
 					console.error('Howler load error:', err);
 				},
-				onplayerror(_id: any, err: any) {
+				onplayerror(_id: number, err: unknown) {
 					console.error('Howler play error:', err);
 				}
 			});

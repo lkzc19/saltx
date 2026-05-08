@@ -39,7 +39,9 @@
 					style={selectedId === item.id
 						? 'background: var(--highlight-bg); border-left: 2px solid var(--highlight-border)'
 						: ''}
+					tabindex="0"
 					onclick={() => onselect(item)}
+					onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && onselect(item)}
 				>
 					<td class="px-4 py-3">
 						<button

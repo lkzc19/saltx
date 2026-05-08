@@ -80,6 +80,7 @@
 		<div
 			class="w-full max-w-md rounded-lg border border-border bg-bg-card p-6 shadow-2xl"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 		>
 			<div class="mb-5 flex items-center justify-between">
 				<h2 class="text-base font-semibold text-text">新增音乐</h2>
@@ -96,8 +97,9 @@
 
 			<form onsubmit={handleSubmit} class="space-y-4">
 				<div>
-					<label class="mb-1.5 block text-xs text-text-disabled">名称</label>
+					<label for="upload-name" class="mb-1.5 block text-xs text-text-disabled">名称</label>
 					<input
+						id="upload-name"
 						type="text"
 						bind:value={name}
 						placeholder="音乐名称"
@@ -105,8 +107,9 @@
 					/>
 				</div>
 				<div>
-					<label class="mb-1.5 block text-xs text-text-disabled">艺术家</label>
+					<label for="upload-artist" class="mb-1.5 block text-xs text-text-disabled">艺术家</label>
 					<input
+						id="upload-artist"
 						type="text"
 						bind:value={artist}
 						placeholder="音乐人"
@@ -114,8 +117,9 @@
 					/>
 				</div>
 				<div>
-					<label class="mb-1.5 block text-xs text-text-disabled">版本</label>
+					<label for="upload-version" class="mb-1.5 block text-xs text-text-disabled">版本</label>
 					<input
+						id="upload-version"
 						type="text"
 						bind:value={version}
 						placeholder="如：原版、Live版、Remix"
@@ -123,7 +127,7 @@
 					/>
 				</div>
 				<div>
-					<label class="mb-1.5 block text-xs text-text-disabled">文件</label>
+					<label for="upload-file" class="mb-1.5 block text-xs text-text-disabled">文件</label>
 					<label
 						class="flex h-9 cursor-pointer items-center rounded-md border border-border bg-bg-primary px-3 text-sm transition-colors hover:border-text-disabled"
 					>
@@ -131,6 +135,7 @@
 							>{file ? file.name : '选择音乐文件'}</span
 						>
 						<input
+							id="upload-file"
 							type="file"
 							accept="audio/*"
 							class="hidden"
@@ -139,7 +144,7 @@
 					</label>
 				</div>
 				<div>
-					<label class="mb-1.5 block text-xs text-text-disabled">封面（可选）</label>
+					<p class="mb-1.5 text-xs text-text-disabled">封面（可选）</p>
 					<div class="flex items-center gap-3">
 						{#if coverImage}
 							<div class="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border">

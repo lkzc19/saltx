@@ -15,9 +15,10 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onclick={onclose} onkeydown={(e) => e.key === 'Escape' && onclose()}>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="relative max-h-[90vh] max-w-[90vw]" onclick={(e) => e.stopPropagation()}>
+		<div class="relative max-h-[90vh] max-w-[90vw]" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 			<button
 				onclick={onclose}
+				aria-label="关闭"
 				class="absolute -top-10 right-0 flex h-8 w-8 items-center justify-center rounded text-text-muted transition-colors hover:text-text"
 			>
 				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

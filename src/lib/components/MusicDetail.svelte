@@ -175,8 +175,9 @@
 
 					<!-- 名称 -->
 					<div>
-						<label class="mb-1.5 block text-xs text-text-disabled">名称</label>
+						<label for="detail-name" class="mb-1.5 block text-xs text-text-disabled">名称</label>
 						<input
+							id="detail-name"
 							type="text"
 							bind:value={editName}
 							class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text outline-none transition-colors focus:border-primary"
@@ -185,8 +186,9 @@
 
 					<!-- 艺术家 -->
 					<div>
-						<label class="mb-1.5 block text-xs text-text-disabled">艺术家</label>
+						<label for="detail-artist" class="mb-1.5 block text-xs text-text-disabled">艺术家</label>
 						<input
+							id="detail-artist"
 							type="text"
 							bind:value={editArtist}
 							class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text outline-none transition-colors focus:border-primary"
@@ -198,8 +200,9 @@
 						<p class="mb-2 text-xs font-medium text-text-muted">替换音乐源（可选）</p>
 						<div class="space-y-2">
 							<div>
-								<label class="mb-1 block text-xs text-text-disabled">版本</label>
+								<label for="detail-version" class="mb-1 block text-xs text-text-disabled">版本</label>
 								<input
+									id="detail-version"
 									type="text"
 									bind:value={newVersion}
 									placeholder={music.version}
@@ -208,12 +211,13 @@
 								/>
 							</div>
 							<div>
-								<label class="mb-1 block text-xs text-text-disabled">音频文件</label>
+								<label for="detail-file" class="mb-1 block text-xs text-text-disabled">音频文件</label>
 								<label class="flex h-8 cursor-pointer items-center rounded-md border border-border bg-bg-primary px-3 text-sm transition-colors hover:border-text-disabled">
 									<span class={newFile ? 'text-text' : 'text-text-disabled'}>
 										{newFile ? newFile.name : '选择音频文件'}
 									</span>
 									<input
+										id="detail-file"
 										bind:this={fileInputEl}
 										type="file"
 										accept="audio/*"

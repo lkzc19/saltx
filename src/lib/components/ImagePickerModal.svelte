@@ -11,16 +11,14 @@
 	} = $props();
 
 	let images = $state<Image[]>([]);
-	let searchName = $state('');
 	let loading = $state(false);
 	let searchInput = $state('');
 
 	async function fetchImages(name?: string) {
 		loading = true;
 		try {
-			const params = new URLSearchParams({ pageSize: '50' });
-			if (name) params.set('name', name);
-			const res = await fetch(`/api/admin/image/list?${params}`);
+			const qs = name ? `pageSize=50&name=${encodeURIComponent(name)}` : 'pageSize=50';
+			const res = await fetch(`/api/admin/image/list?${qs}`);
 			if (res.ok) {
 				const data = (await res.json()) as { items: Image[] };
 				images = data.items;
@@ -54,7 +52,7 @@
 {#if open}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+		class="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm"
 		onclick={close}
 		onkeydown={(e) => e.key === 'Escape' && close()}
 	>
@@ -62,6 +60,7 @@
 		<div
 			class="flex h-[70vh] w-full max-w-2xl flex-col rounded-lg border border-border bg-bg-card shadow-2xl"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 		>
 			<!-- Header -->
 			<div class="flex items-center justify-between border-b border-border px-5 py-4">

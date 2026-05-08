@@ -1,188 +1,161 @@
-# Cloudflare 本地开发配置指南 (R2 + D1)
+# Cloudflare 配置指南
 
-## 前置条件
+## 资源清单
 
-- 已安装 `wrangler` (devDependency 已包含)
-- 已注册 Cloudflare 账号
-- 已创建 D1 数据库和 R2 存储桶（用于生产部署时使用）
+| 资源 | 名称 | 用途 |
+|------|------|------|
+| Workers | saltx | SvelteKit 全栈应用 |
+| D1 数据库 | saltx | 元数据存储（music、image 表） |
+| R2 存储桶 | saltx | 音乐文件、图片、缩略图 |
+| 域名 | saltx.fun | 自定义域名（Custom Domain） |
 
 ---
 
-## wrangler.jsonc 配置说明
+## wrangler.jsonc 关键配置
 
 ```jsonc
 {
-  // D1 数据库绑定
+  "name": "saltx",
+  "compatibility_date": "2026-05-02",
+  "compatibility_flags": ["nodejs_als"],
+
   "d1_databases": [
     {
-      "binding": "DB",                    // 代码中通过 platform.env.DB 访问
-      "database_name": "saltx-db",        // D1 控制台中创建的数据库名称
-      "database_id": "<your-d1-database-id>"  // D1 控制台中获取的 Database ID
+      "binding": "DB",           // 代码中 platform.env.DB
+      "database_name": "saltx",
+      "database_id": "cde17f3d-053a-48cc-9731-ad3a532e1cc1"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",       // 代码中 platform.env.BUCKET
+      "bucket_name": "saltx"
     }
   ],
 
-  // R2 存储桶绑定
-  "r2_buckets": [
-    {
-      "binding": "BUCKET",               // 代码中通过 platform.env.BUCKET 访问
-      "bucket_name": "saltx-bucket",     // 生产环境存储桶名称
-      "preview_bucket_name": "saltx-bucket-preview"  // 本地开发预览存储桶名称
-    }
+  "routes": [
+    { "pattern": "saltx.fun", "custom_domain": true }
   ]
 }
 ```
 
-**本地模式说明：**
-- **D1**：`wrangler dev` 时会自动使用本地 SQLite 文件，路径在 `.wrangler/state/v3/d1/<binding>/`
-- **R2**：`wrangler dev` 时会自动使用本地文件系统模拟，路径在 `.wrangler/state/v3/r2/<binding>/`
-- 无需 `preview_id`（wrangler v4 已移除此字段），本地开发自动隔离数据
+**本地开发说明：**
+- D1：`wrangler dev` 自动使用 `.wrangler/state/v3/d1/` 下的本地 SQLite
+- R2：自动使用 `.wrangler/state/v3/r2/` 下的本地文件系统模拟
+
+---
+
+## 本地开发
+
+```bash
+# 安装依赖
+npm install
+
+# 启动（先 build 再 wrangler dev）
+npm run dev
+
+# 生成 wrangler 类型定义（修改 wrangler.jsonc 后执行）
+npm run gen
+```
+
+### 初始化本地数据库
+
+```bash
+# 按顺序执行所有迁移（本地）
+npx wrangler d1 execute saltx --local --file=migrations/001_initial.sql
+npx wrangler d1 execute saltx --local --file=migrations/002_image_file_key.sql
+npx wrangler d1 execute saltx --local --file=migrations/003_music_cover.sql
+npx wrangler d1 execute saltx --local --file=migrations/004_music_cover_file_key.sql
+```
+
+---
+
+## 远程数据库迁移
+
+```bash
+# 登录（Token 过期时执行）
+npx wrangler login
+
+# 按顺序执行所有迁移（远程）
+npx wrangler d1 execute saltx --remote --file=migrations/001_initial.sql
+npx wrangler d1 execute saltx --remote --file=migrations/002_image_file_key.sql
+npx wrangler d1 execute saltx --remote --file=migrations/003_music_cover.sql
+npx wrangler d1 execute saltx --remote --file=migrations/004_music_cover_file_key.sql
+```
+
+> 每次新建迁移文件后，需同时在本地和远程执行对应的 sql 文件。
+
+---
+
+## 部署
+
+```bash
+npm run build
+npx wrangler deploy
+```
 
 ---
 
 ## 获取 Cloudflare 凭证
 
-### 1. 获取 Account ID
-
+### Account ID
 ```
 Cloudflare Dashboard → 右侧栏 → Account ID
 ```
 
-### 2. 获取 D1 Database ID
-
+### D1 Database ID
 ```
-Cloudflare Dashboard → D1 → 选择数据库 → 复制 Database ID
+Cloudflare Dashboard → D1 → 选择数据库 → Database ID
 ```
 
-### 3. 获取 API Token
-
+### API Token（drizzle-kit 远程操作时使用）
 ```
-Cloudflare Dashboard → My Profile → API Tokens → Create Token
-→ 使用 "Edit Cloudflare Workers" 模板
-→ 确保包含 Account.D1 和 Account.Workers R2 Storage 权限
+My Profile → API Tokens → Create Token
+→ 模板：Edit Cloudflare Workers
+→ 确保包含 D1 Write 和 R2 Write 权限
 ```
 
 ---
 
-## .env 环境变量
-
-`.env` 文件用于 `drizzle-kit push/generate/migrate` 远程操作：
+## .env（drizzle-kit 使用）
 
 ```bash
-# Cloudflare D1 (远程推送 schema 时需要)
 CLOUDFLARE_ACCOUNT_ID="your-account-id"
-CLOUDFLARE_DATABASE_ID="your-database-id"
+CLOUDFLARE_DATABASE_ID="cde17f3d-053a-48cc-9731-ad3a532e1cc1"
 CLOUDFLARE_D1_TOKEN="your-api-token"
 ```
 
-> **注意：** 本地开发 (`wrangler dev`) 不需要这些环境变量，D1/R2 绑定由 wrangler 自动处理。
+> 仅 `drizzle-kit push/generate/migrate` 等 schema 操作时需要，`wrangler dev/deploy` 不需要。
 
 ---
 
-## 本地开发命令
+## Cloudflare Access（后台鉴权，待配置）
 
-### 启动本地开发服务器
+后台路由 `/admin/*` 和 `/api/admin/*` 将通过 Cloudflare Access 保护：
 
-```bash
-npm run dev
+```
+Cloudflare Dashboard → Access → Applications → Add Application
+→ Self-hosted
+→ Domain: saltx.fun, Path: /admin
+→ Policy: 邮箱白名单 / One-time PIN
 ```
 
-wrangler 会自动：
-- 在 `.wrangler/state/v3/d1/` 创建本地 D1 SQLite 文件
-- 在 `.wrangler/state/v3/r2/` 创建本地 R2 文件存储目录
-
-### 推送数据库 schema 到本地 D1
-
-```bash
-npm run db:push
-```
-
-### 生成数据库迁移文件
-
-```bash
-npm run db:generate
-```
-
-### 生成 wrangler 类型定义
-
-```bash
-npm run gen
-```
-
-这会生成 `worker-configuration.d.ts`，包含 `Env` 接口中 `DB` 和 `BUCKET` 的类型。
+API 路由单独配置或在 Worker 层做 JWT 验证。
 
 ---
 
-## 代码中使用 D1 和 R2
+## 健康检查
 
-### D1 数据库（已有封装）
-
-```typescript
-// src/lib/server/db/index.ts
-import { drizzle } from 'drizzle-orm/d1';
-import * as schema from './schema';
-
-export const getDb = (d1: D1Database) => drizzle(d1, { schema });
+```
+GET /api/ping
 ```
 
-在 SvelteKit 路由中使用：
+检查 D1 和 R2 连通性，返回：
 
-```typescript
-// src/routes/+page.server.ts
-import { getDb } from '$lib/server/db';
-
-export const load = async ({ platform }) => {
-  const d1 = platform!.env.DB;
-  const db = getDb(d1);
-  const tasks = await db.select().from(schema.task);
-  return { tasks };
-};
+```json
+{
+  "status": "ok",
+  "d1": { "status": "ok" },
+  "r2": { "status": "ok" }
+}
 ```
-
-### R2 存储桶
-
-```typescript
-// 上传文件
-const r2 = platform!.env.BUCKET;
-await r2.put('path/to/file.txt', fileContent);
-
-// 获取文件
-const object = await r2.get('path/to/file.txt');
-const text = await object!.text();
-
-// 列出文件
-const list = await r2.list({ prefix: 'path/to/' });
-
-// 删除文件
-await r2.delete('path/to/file.txt');
-```
-
----
-
-## 本地开发 vs 生产部署
-
-| 功能 | 本地 (`wrangler dev`) | 生产 (`wrangler deploy`) |
-|------|----------------------|------------------------|
-| D1 | `.wrangler/state/v3/d1/` 本地 SQLite | Cloudflare D1 云端数据库 |
-| R2 | `.wrangler/state/v3/r2/` 本地文件系统 | Cloudflare R2 云端存储 |
-| 数据隔离 | 每次 `wrangler restart` 清空 | 持久化 |
-
----
-
-## 常见问题
-
-### Q: 本地开发数据不持久怎么办？
-
-本地开发数据存储在 `.wrangler/state/v3/` 下，wrangler restart 后会清空。如需持久化，将 schema 推送到远程 D1：
-
-```bash
-# 设置 .env 后执行
-npm run db:push
-```
-
-### Q: drizzle-kit push 报错？
-
-确保 `.env` 中 `CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_DATABASE_ID`、`CLOUDFLARE_D1_TOKEN` 已正确填写。
-
-### Q: R2 本地存储目录在哪里？
-
-在 `.wrangler/state/v3/r2/` 下，目录结构与 `binding` 名称一致（如 `BUCKET`）。

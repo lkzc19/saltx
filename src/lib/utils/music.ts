@@ -11,11 +11,6 @@ export function getR2Url(fileKey: string): string {
 	return `/files/${fileKey}`;
 }
 
-export function getImageUrl(image: { id: string; extension: string }): string {
-	const fileKey = buildImageFileKey(image.id, image.extension);
-	return getR2Url(fileKey);
-}
-
 export function getThumbnailUrl(image: { id: string }): string {
 	const fileKey = `image/${image.id}_thumb.webp`; //缩略图固定 webp
 	return getR2Url(fileKey);

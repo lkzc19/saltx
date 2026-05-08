@@ -9,7 +9,7 @@
 		onupload: () => void;
 	} = $props();
 
-	let name = $state(filters.name);
+	let name = $state('');
 
 	$effect(() => {
 		name = filters.name;

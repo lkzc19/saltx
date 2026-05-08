@@ -47,9 +47,7 @@
 	},
 	"dependencies": {
 		"howler": "^2.2.4",
-		"jimp": "^1.6.1",
 		"nanoid": "^5.1.11",
-		"svelte-easy-crop": "^5.0.1",
-		"wasm-image-optimization": "^2.0.9"
+		"svelte-easy-crop": "^5.0.1"
 	}
 }

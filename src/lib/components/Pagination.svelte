@@ -44,6 +44,7 @@
 		<button
 			onclick={() => goTo(1)}
 			disabled={page <= 1}
+			aria-label="第一页"
 			class="flex h-8 w-8 items-center justify-center rounded text-text-muted transition-colors hover:bg-border hover:text-text disabled:opacity-30"
 		>
 			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
@@ -51,16 +52,18 @@
 		<button
 			onclick={() => goTo(page - 1)}
 			disabled={page <= 1}
+			aria-label="上一页"
 			class="flex h-8 w-8 items-center justify-center rounded text-text-muted transition-colors hover:bg-border hover:text-text disabled:opacity-30"
 		>
 			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
 		</button>
-		{#each visiblePages as p}
+		{#each visiblePages as p (p)}
 			{#if p === '...'}
 				<span class="flex h-8 w-8 items-center justify-center text-text-disabled">…</span>
 			{:else}
 				<button
 					onclick={() => goTo(p as number)}
+					aria-label="第 {p} 页"
 					class="flex h-8 w-8 items-center justify-center rounded text-sm transition-colors"
 					class:bg-primary={p === page}
 					class:text-bg-primary={p === page}
@@ -75,6 +78,7 @@
 		<button
 			onclick={() => goTo(page + 1)}
 			disabled={page >= totalPages}
+			aria-label="下一页"
 			class="flex h-8 w-8 items-center justify-center rounded text-text-muted transition-colors hover:bg-border hover:text-text disabled:opacity-30"
 		>
 			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
@@ -82,6 +86,7 @@
 		<button
 			onclick={() => goTo(totalPages)}
 			disabled={page >= totalPages}
+			aria-label="最后一页"
 			class="flex h-8 w-8 items-center justify-center rounded text-text-muted transition-colors hover:bg-border hover:text-text disabled:opacity-30"
 		>
 			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
@@ -92,7 +97,7 @@
 		onchange={(e) => onchange(1, Number((e.target as HTMLSelectElement).value))}
 		class="h-8 rounded-md border border-border bg-bg-card px-2 text-xs text-text-muted outline-none"
 	>
-		{#each pageSizes as ps}
+		{#each pageSizes as ps (ps)}
 			<option value={String(ps)}>{ps} 条/页</option>
 		{/each}
 	</select>

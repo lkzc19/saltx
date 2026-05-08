@@ -9,9 +9,9 @@
 		onupload: () => void;
 	} = $props();
 
-	let name = $state(filters.name);
-	let artist = $state(filters.artist);
-	let id = $state(filters.id);
+	let name = $state('');
+	let artist = $state('');
+	let id = $state('');
 
 	$effect(() => {
 		name = filters.name;

@@ -131,6 +131,7 @@
 		<div
 			class="w-full max-w-lg rounded-lg border border-border bg-bg-card p-6 shadow-2xl"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 		>
 			<!-- Header -->
 			<div class="mb-5 flex items-center justify-between">

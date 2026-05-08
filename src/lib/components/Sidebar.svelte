@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { playerState, requestTogglePlay } from '$lib/stores/admin.svelte';
 
 	let { collapsed = $bindable(false) } = $props();
 
-	const navItems = [
+	const navItems: { icon: string; label: string; href: '/admin/music' | '/admin/image' }[] = [
 		{ icon: 'music', label: '音乐管理', href: '/admin/music' },
 		{ icon: 'image', label: '图片管理', href: '/admin/image' }
 	];
@@ -44,9 +45,9 @@
 
 	<!-- 导航 -->
 	<nav class="flex-1 overflow-y-auto py-3">
-		{#each navItems as item}
+		{#each navItems as item (item.href)}
 			<a
-				href={item.href}
+				href={resolve(item.href)}
 				class="mx-2 mb-1 flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors"
 				style={isActive(item.href) ? 'background: var(--highlight-bg)' : ''}
 				class:text-primary={isActive(item.href)}

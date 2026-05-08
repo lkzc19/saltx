@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import SearchBar from '$lib/components/SearchBar.svelte';
 	import MusicTable from '$lib/components/MusicTable.svelte';
 	import MusicDetail from '$lib/components/MusicDetail.svelte';
@@ -13,18 +15,19 @@
 	let uploadOpen = $state(false);
 
 	function handleSearch(filters: { name: string; artist: string; id: string }) {
-		const params = new URLSearchParams();
-		if (filters.name) params.set('name', filters.name);
-		if (filters.artist) params.set('artist', filters.artist);
-		if (filters.id) params.set('id', filters.id);
-		goto(`/admin/music?${params.toString()}`);
+		const sp = new SvelteURLSearchParams();
+		if (filters.name) sp.set('name', filters.name);
+		if (filters.artist) sp.set('artist', filters.artist);
+		if (filters.id) sp.set('id', filters.id);
+		const qs = sp.toString();
+		goto(qs ? resolve(`/admin/music?${qs}`) : resolve('/admin/music'));
 	}
 
 	function handlePageChange(p: number, ps: number) {
-		const params = new URLSearchParams(page.url.searchParams);
-		params.set('page', String(p));
-		if (ps !== data.pageSize) params.set('pageSize', String(ps));
-		goto(`/admin/music?${params.toString()}`);
+		const sp = new SvelteURLSearchParams(page.url.searchParams);
+		sp.set('page', String(p));
+		if (ps !== data.pageSize) sp.set('pageSize', String(ps));
+		goto(resolve(`/admin/music?${sp.toString()}`));
 	}
 
 	function handlePlay(item: Music) {
@@ -36,7 +39,7 @@
 	}
 
 	function handleUploaded() {
-		goto(page.url.href, { invalidateAll: true });
+		invalidateAll();
 	}
 
 	function handleSaved(updated: Music) {
@@ -44,7 +47,7 @@
 		if ($playerState.currentTrack?.id === updated.id) {
 			playerState.update((s) => ({ ...s, currentTrack: updated }));
 		}
-		goto(page.url.href, { invalidateAll: true });
+		invalidateAll();
 	}
 
 	function handleDeleted() {
@@ -53,7 +56,7 @@
 		if (deletedId && $playerState.currentTrack?.id === deletedId) {
 			playerState.set({ currentTrack: null, playing: false, currentTime: 0, duration: 0 });
 		}
-		goto(page.url.href, { invalidateAll: true });
+		invalidateAll();
 	}
 </script>
 
