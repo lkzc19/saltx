@@ -89,7 +89,7 @@
 			formData.set('thumbnail', thumbnailFile);
 			formData.set('aspect_ratio', '1:1');
 
-			const res = await fetch('/api/image', { method: 'POST', body: formData });
+			const res = await fetch('/api/admin/image', { method: 'POST', body: formData });
 			if (!res.ok) {
 				const body = (await res.json()) as { error?: string };
 				throw new Error(body.error ?? '上传失败');

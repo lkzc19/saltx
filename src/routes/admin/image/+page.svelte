@@ -36,7 +36,7 @@
 
 	async function handleDelete(id: string) {
 		if (!confirm('确定要删除这张图片吗？')) return;
-		await fetch(`/api/image?id=${id}`, { method: 'DELETE' });
+		await fetch(`/api/admin/image?id=${id}`, { method: 'DELETE' });
 		previewImage = null;
 		goto(page.url.href, { invalidateAll: true });
 	}

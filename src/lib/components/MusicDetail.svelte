@@ -71,7 +71,7 @@
 				formData.set('version', newVersion);
 			}
 
-			const res = await fetch(`/api/music?id=${music.id}`, { method: 'PUT', body: formData });
+			const res = await fetch(`/api/admin/music?id=${music.id}`, { method: 'PUT', body: formData });
 			if (!res.ok) {
 				const body = (await res.json()) as { error?: string };
 				throw new Error(body.error ?? '保存失败');
@@ -90,7 +90,7 @@
 	async function handleDelete() {
 		if (!music || !confirm(`确定要删除「${music.name}」吗？`)) return;
 
-		const res = await fetch(`/api/music?id=${music.id}`, { method: 'DELETE' });
+		const res = await fetch(`/api/admin/music?id=${music.id}`, { method: 'DELETE' });
 		if (!res.ok) {
 			const body = (await res.json()) as { error?: string };
 			error = body.error ?? '删除失败';

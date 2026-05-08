@@ -54,7 +54,7 @@
 				if (key) formData.set('cover_file_key', key);
 			}
 
-			const res = await fetch('/api/music', { method: 'POST', body: formData });
+			const res = await fetch('/api/admin/music', { method: 'POST', body: formData });
 			if (!res.ok) {
 				const body = (await res.json()) as { error?: string };
 				throw new Error(body.error ?? '上传失败');

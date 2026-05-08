@@ -20,7 +20,7 @@
 		try {
 			const params = new URLSearchParams({ pageSize: '50' });
 			if (name) params.set('name', name);
-			const res = await fetch(`/api/image/list?${params}`);
+			const res = await fetch(`/api/admin/image/list?${params}`);
 			if (res.ok) {
 				const data = (await res.json()) as { items: Image[] };
 				images = data.items;
