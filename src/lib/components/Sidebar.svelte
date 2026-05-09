@@ -5,8 +5,9 @@
 
 	let { collapsed = $bindable(false) } = $props();
 
-	const navItems: { icon: string; label: string; href: '/admin/music' | '/admin/image' }[] = [
+	const navItems: { icon: string; label: string; href: '/admin/music' | '/admin/image' | '/admin/album' }[] = [
 		{ icon: 'music', label: '音乐管理', href: '/admin/music' },
+		{ icon: 'album', label: '专辑管理', href: '/admin/album' },
 		{ icon: 'image', label: '图片管理', href: '/admin/image' }
 	];
 
@@ -60,6 +61,10 @@
 				{#if item.icon === 'music'}
 					<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+					</svg>
+				{:else if item.icon === 'album'}
+					<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 14a4 4 0 110-8 4 4 0 010 8zm0-6a2 2 0 100 4 2 2 0 000-4z" />
 					</svg>
 				{:else if item.icon === 'image'}
 					<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

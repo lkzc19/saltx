@@ -1,10 +1,11 @@
 import { writable } from 'svelte/store';
-import type { Music, Image } from '$lib/types/music';
+import type { Music, Image, Album } from '$lib/types/music';
 
 export const adminState = $state({
 	sidebarCollapsed: false,
 	selectedMusic: null as Music | null,
 	selectedImage: null as Image | null,
+	selectedAlbum: null as Album | null,
 	uploadOpen: false
 });
 

@@ -35,3 +35,22 @@ export interface ImageListResponse {
 	total: number;
 	totalPages: number;
 }
+
+export interface Album {
+	id: string;
+	name: string;
+	artist: string | null;
+	description: string | null;
+	cover_file_key: string | null;
+	created_at: string;
+	updated_at: string;
+	music_count?: number;
+}
+
+export interface AlbumListResponse {
+	items: Album[];
+	page: number;
+	pageSize: number;
+	total: number;
+	totalPages: number;
+}
