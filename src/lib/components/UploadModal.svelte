@@ -20,26 +20,24 @@
 	let uploading = $state(false);
 	let error = $state('');
 
-	let canSubmit = $derived(name && artist && version && file && !uploading);
-
-	function reset() {
-		name = '';
-		artist = '';
-		version = '';
-		file = null;
-		coverImage = null;
-		error = '';
-	}
+	$effect(() => {
+		if (open) {
+			name = '';
+			artist = '';
+			version = '';
+			file = null;
+			coverImage = null;
+			error = '';
+		}
+	});
 
 	function close() {
-		reset();
 		open = false;
 	}
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
-		if (!canSubmit) return;
-
+		if (!name.trim() || !artist.trim() || !version.trim() || !file || uploading) return;
 		uploading = true;
 		error = '';
 
@@ -50,8 +48,7 @@
 			formData.set('version', version);
 			formData.set('file', file!);
 			if (coverImage) {
-				const key = coverImage.thumbnail_key ?? coverImage.file_key;
-				if (key) formData.set('cover_file_key', key);
+				formData.set('cover_file_key', coverImage.file_key);
 			}
 
 			const res = await fetch('/api/admin/music', { method: 'POST', body: formData });
@@ -96,71 +93,17 @@
 			</div>
 
 			<form onsubmit={handleSubmit} class="space-y-4">
-				<div>
-					<label for="upload-name" class="mb-1.5 block text-xs text-text-disabled">名称</label>
-					<input
-						id="upload-name"
-						type="text"
-						bind:value={name}
-						placeholder="音乐名称"
-						class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
-					/>
-				</div>
-				<div>
-					<label for="upload-artist" class="mb-1.5 block text-xs text-text-disabled">艺术家</label>
-					<input
-						id="upload-artist"
-						type="text"
-						bind:value={artist}
-						placeholder="音乐人"
-						class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
-					/>
-				</div>
-				<div>
-					<label for="upload-version" class="mb-1.5 block text-xs text-text-disabled">版本</label>
-					<input
-						id="upload-version"
-						type="text"
-						bind:value={version}
-						placeholder="如：原版、Live版、Remix"
-						class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
-					/>
-				</div>
-				<div>
-					<label for="upload-file" class="mb-1.5 block text-xs text-text-disabled">文件</label>
-					<label
-						class="flex h-9 cursor-pointer items-center rounded-md border border-border bg-bg-primary px-3 text-sm transition-colors hover:border-text-disabled"
-					>
-						<span class={file ? 'text-text' : 'text-text-disabled'}
-							>{file ? file.name : '选择音乐文件'}</span
-						>
-						<input
-							id="upload-file"
-							type="file"
-							accept="audio/*"
-							class="hidden"
-							onchange={(e) => (file = (e.target as HTMLInputElement).files?.[0] ?? null)}
-						/>
-					</label>
-				</div>
+				<!-- 封面 -->
 				<div>
 					<p class="mb-1.5 text-xs text-text-disabled">封面（可选）</p>
 					<div class="flex items-center gap-3">
 						{#if coverImage}
 							<div class="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border">
-								{#if coverImage.thumbnail_key}
-									<img
-										src={getThumbnailUrl(coverImage)}
-										alt={coverImage.name}
-										class="h-full w-full object-cover"
-									/>
-								{:else}
-									<div class="flex h-full w-full items-center justify-center bg-bg-primary text-text-disabled">
-										<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-										</svg>
-									</div>
-								{/if}
+								<img
+									src={getThumbnailUrl(coverImage.file_key)}
+									alt={coverImage.name}
+									class="h-full w-full object-cover"
+								/>
 							</div>
 							<div class="min-w-0 flex-1">
 								<p class="truncate text-xs text-text">{coverImage.name}</p>
@@ -172,42 +115,95 @@
 							>
 								移除
 							</button>
+						{:else}
+							<button
+								type="button"
+								onclick={() => (pickerOpen = true)}
+								class="h-12 rounded-md border border-border px-4 text-sm text-text-muted transition-colors hover:bg-border hover:text-text"
+							>
+								选择封面
+							</button>
 						{/if}
-						<button
-							type="button"
-							onclick={() => (pickerOpen = true)}
-							class="h-8 rounded-md border border-border px-3 text-xs text-text-muted transition-colors hover:bg-border hover:text-text"
-						>
-							{coverImage ? '更换封面' : '选择封面'}
-						</button>
 					</div>
+				</div>
+
+				<!-- 名称 -->
+				<div>
+					<label for="upload-name" class="mb-1.5 block text-xs text-text-disabled">名称</label>
+					<input
+						id="upload-name"
+						type="text"
+						bind:value={name}
+						required
+						placeholder="请输入音乐名称"
+						class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
+					/>
+				</div>
+
+				<!-- 艺术家 -->
+				<div>
+					<label for="upload-artist" class="mb-1.5 block text-xs text-text-disabled">艺术家</label>
+					<input
+						id="upload-artist"
+						type="text"
+						bind:value={artist}
+						required
+						placeholder="请输入艺术家名称"
+						class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
+					/>
+				</div>
+
+				<!-- 版本 -->
+				<div>
+					<label for="upload-version" class="mb-1.5 block text-xs text-text-disabled">版本</label>
+					<input
+						id="upload-version"
+						type="text"
+						bind:value={version}
+						required
+						placeholder="original"
+						class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
+					/>
+				</div>
+
+				<!-- 文件 -->
+				<div>
+					<label for="upload-file" class="mb-1.5 block text-xs text-text-disabled">音频文件</label>
+					<label class="flex h-9 cursor-pointer items-center rounded-md border border-border bg-bg-primary px-3 text-sm transition-colors hover:border-text-disabled">
+						<span class={file ? 'text-text' : 'text-text-disabled'}>
+							{file ? file.name : '选择音频文件'}
+						</span>
+						<input
+							id="upload-file"
+							type="file"
+							accept="audio/*"
+							class="hidden"
+							onchange={(e) => (file = (e.target as HTMLInputElement).files?.[0] ?? null)}
+						/>
+					</label>
 				</div>
 
 				{#if error}
 					<p class="text-xs text-error">{error}</p>
 				{/if}
 
-				<div class="flex justify-end gap-2 pt-2">
+				<div class="flex gap-2 pt-1">
 					<button
 						type="button"
 						onclick={close}
-						class="h-9 rounded-md border border-border px-4 text-sm text-text-muted transition-colors hover:bg-border hover:text-text"
+						class="h-9 flex-1 rounded-md border border-border text-sm text-text-muted transition-colors hover:bg-border hover:text-text"
 					>
 						取消
 					</button>
 					<button
 						type="submit"
-						disabled={!canSubmit}
-						class="flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-bg-primary transition-opacity hover:opacity-90 disabled:opacity-50"
+						disabled={uploading || !name.trim() || !artist.trim() || !version.trim() || !file}
+						class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md bg-primary text-sm font-medium text-bg-primary transition-opacity hover:opacity-90 disabled:opacity-50"
 					>
 						{#if uploading}
-							<svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+							<svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
 								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-								<path
-									class="opacity-75"
-									fill="currentColor"
-									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-								/>
+								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
 							</svg>
 						{/if}
 						上传

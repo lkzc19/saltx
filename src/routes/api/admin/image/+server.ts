@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 import { image, nanoid8 } from '$lib/server/db/schema';
-import { buildImageFileKey } from '$lib/utils/music';
 import { eq } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
@@ -27,37 +26,38 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	}
 
 	const fileName = name ?? file.name.replace(/\.[^/.]+$/, '');
-	const id = nanoid8();
 	const ext = getExtension(file.name);
-	const fileKey = buildImageFileKey(id, ext);
 
 	const bucket = platform!.env.BUCKET;
 	const db = getDb(platform!.env.DB);
 
-	await bucket.put(fileKey, await file.arrayBuffer(), {
-		httpMetadata: { contentType: file.type }
-	});
-
-	let thumbnailKey: string | undefined;
-	if (thumbnail) {
-		thumbnailKey = `image/${id}_thumb.webp`;
-		await bucket.put(thumbnailKey, await thumbnail.arrayBuffer(), {
-			httpMetadata: { contentType: 'image/webp' }
-		});
-	}
-
+	// 插入记录（id 和 file_key 相同）
+	const id = nanoid8();
 	const record = await db
 		.insert(image)
 		.values({
 			id,
+			file_key: id,
 			name: fileName,
 			extension: ext,
-			aspect_ratio: aspectRatio,
-			file_key: fileKey,
-			thumbnail_key: thumbnailKey
+			aspect_ratio: aspectRatio
 		})
 		.returning()
 		.get();
+
+	// 上传原图到 R2
+	const fileKey = `image/${id}.${ext}`;
+	await bucket.put(fileKey, await file.arrayBuffer(), {
+		httpMetadata: { contentType: file.type }
+	});
+
+	// 上传缩略图（如果提供）
+	if (thumbnail) {
+		const thumbnailKey = `image/${id}_thumb.webp`;
+		await bucket.put(thumbnailKey, await thumbnail.arrayBuffer(), {
+			httpMetadata: { contentType: 'image/webp' }
+		});
+	}
 
 	return json(record, { status: 201 });
 };
@@ -113,12 +113,11 @@ export const DELETE: RequestHandler = async ({ url, platform }) => {
 
 	const bucket = platform!.env.BUCKET;
 	// 删除原图
-	const fileKey = existing.file_key ?? buildImageFileKey(existing.id, existing.extension);
+	const fileKey = `image/${existing.id}.${existing.extension}`;
 	await bucket.delete(fileKey);
 	// 删除缩略图
-	if (existing.thumbnail_key) {
-		await bucket.delete(existing.thumbnail_key);
-	}
+	const thumbnailKey = `image/${existing.id}_thumb.webp`;
+	await bucket.delete(thumbnailKey);
 
 	await db.delete(image).where(eq(image.id, id));
 

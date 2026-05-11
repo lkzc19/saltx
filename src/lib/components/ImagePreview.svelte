@@ -1,14 +1,8 @@
 <script lang="ts">
-	import { buildImageFileKey, getR2Url } from '$lib/utils/music';
+	import { getOriginalUrl } from '$lib/utils/music';
 	import type { Image } from '$lib/types/music';
 
-	let { image, onclose, ondelete }: { image: Image | null; onclose: () => void; ondelete: (id: string) => void } = $props();
-
-	function getOriginalUrl(): string {
-		if (!image) return '';
-		const key = image.file_key ?? buildImageFileKey(image.id, image.extension);
-		return getR2Url(key);
-	}
+	let { image, onclose, ondelete }: { image: Image | null; onclose: () => void; ondelete: (key: string) => void } = $props();
 </script>
 
 {#if image}
@@ -26,7 +20,7 @@
 				</svg>
 			</button>
 
-			<img src={getOriginalUrl()} alt={image.name} class="max-h-[80vh] max-w-[90vw] rounded-lg object-contain" />
+			<img src={getOriginalUrl(image.file_key, image.extension)} alt={image.name} class="max-h-[80vh] max-w-[90vw] rounded-lg object-contain" />
 
 			<div class="mt-4 flex items-center justify-between">
 				<div>
@@ -34,7 +28,7 @@
 					<p class="text-xs text-text-muted">{image.extension.toUpperCase()} · {image.aspect_ratio}</p>
 				</div>
 				<button
-					onclick={() => ondelete(image.id)}
+					onclick={() => ondelete(image.file_key)}
 					class="flex h-9 items-center gap-2 rounded-md border border-error px-4 text-sm text-error transition-colors hover:bg-error hover:text-white"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

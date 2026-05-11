@@ -49,7 +49,7 @@
 	}
 
 	function handleCoverSelect(img: Image) {
-		editCoverFileKey = img.thumbnail_key ?? img.file_key ?? null;
+		editCoverFileKey = img.id;
 	}
 
 	function clearCover() {

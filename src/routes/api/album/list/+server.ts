@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
-import { album, albumMusic, image } from '$lib/server/db/schema';
+import { album, albumMusic } from '$lib/server/db/schema';
 import { like, count, and, eq, sql } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
@@ -27,16 +27,15 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 			artist: album.artist,
 			description: album.description,
 			cover_file_key: album.cover_file_key,
-			cover_extension: image.extension,
 			created_at: album.created_at,
 			updated_at: album.updated_at,
 			music_count: sql<number>`count(${albumMusic.music_id})`
 		})
 		.from(album)
 		.leftJoin(albumMusic, eq(album.id, albumMusic.album_id))
-		.leftJoin(image, eq(album.cover_file_key, image.file_key))
 		.where(where)
 		.groupBy(album.id)
+		.orderBy(album.created_at)
 		.limit(pageSize)
 		.offset((page - 1) * pageSize);
 
