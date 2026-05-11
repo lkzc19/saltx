@@ -27,7 +27,7 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 			return new Response('Invalid Range', { status: 416 });
 		}
 
-		const obj = await r2.get(path, { range });
+		const obj = await r2.get(path, { range: range as R2Range });
 		if (!obj) {
 			return new Response('Not found', { status: 404 });
 		}

@@ -138,6 +138,7 @@
 				<h2 class="text-base font-semibold text-text">上传图片</h2>
 				<button
 					onclick={close}
+					aria-label="关闭"
 					class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,8 +204,9 @@
 
 					<!-- 名称 -->
 					<div>
-						<label class="mb-1.5 block text-xs text-text-disabled">名称</label>
+						<label for="image-name" class="mb-1.5 block text-xs text-text-disabled">名称</label>
 						<input
+							id="image-name"
 							type="text"
 							bind:value={name}
 							placeholder="图片名称"

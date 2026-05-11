@@ -17,14 +17,6 @@
 		align-items: center;
 		justify-content: center;
 	}
-	.sf-tag {
-		font-size: 0.7rem;
-		font-weight: 300;
-		letter-spacing: 0.45em;
-		color: rgba(255, 255, 255, 0.2);
-		margin: 0;
-		text-align: center;
-	}
 	.sf-scroll {
 		position: absolute;
 		right: 3rem;

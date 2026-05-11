@@ -48,7 +48,7 @@
 			formData.set('version', version);
 			formData.set('file', file!);
 			if (coverImage) {
-				formData.set('cover_file_key', coverImage.file_key);
+				formData.set('cover_file_key', coverImage.file_key!);
 			}
 
 			const res = await fetch('/api/admin/music', { method: 'POST', body: formData });
@@ -100,7 +100,7 @@
 						{#if coverImage}
 							<div class="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border">
 								<img
-									src={getThumbnailUrl(coverImage.file_key)}
+									src={getThumbnailUrl(coverImage.file_key!)}
 									alt={coverImage.name}
 									class="h-full w-full object-cover"
 								/>

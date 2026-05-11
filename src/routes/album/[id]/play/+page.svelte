@@ -343,9 +343,6 @@
 		background: #0d0d1c;
 		transition: box-shadow 0.5s;
 	}
-	.cv.spinning {
-		box-shadow: 0 0 40px rgba(56,182,255,0.12), 0 0 80px rgba(56,182,255,0.05);
-	}
 	.cv img { width: 100%; height: 100%; object-fit: cover; display: block; }
 	.cv-ph {
 		width: 100%; height: 100%;
@@ -361,11 +358,6 @@
 	.cv-tr { top: -1px; right: -1px; border-top: 1px solid #38b6ff; border-right: 1px solid #38b6ff; }
 	.cv-bl { bottom: -1px; left: -1px; border-bottom: 1px solid #38b6ff; border-left: 1px solid #38b6ff; }
 	.cv-br { bottom: -1px; right: -1px; border-bottom: 1px solid #38b6ff; border-right: 1px solid #38b6ff; }
-	.cr {
-		font-size: 0.55rem; color: rgba(255,255,255,0.12);
-		letter-spacing: 0.1em; margin: 0.5rem 0 0; text-align: right;
-	}
-
 	/* 右：信息 */
 	.rp {
 		flex: 1;
@@ -376,11 +368,6 @@
 		overflow-y: auto;
 		max-height: calc(100vh - 11rem);
 	}
-	.rl { display: flex; align-items: center; gap: 0.85rem; }
-	.rl-tag { font-size: 0.6rem; letter-spacing: 0.4em; color: #38b6ff; }
-	.rl-sep { display: block; width: 28px; height: 1px; background: rgba(255,255,255,0.15); }
-	.rl-sub { font-size: 0.6rem; letter-spacing: 0.2em; color: rgba(255,255,255,0.25); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
-
 	/* 当前曲目信息 */
 	.ci { display: flex; flex-direction: column; gap: 0.35rem; }
 	.ci-num { font-size: 0.6rem; letter-spacing: 0.25em; color: rgba(255,255,255,0.2); }

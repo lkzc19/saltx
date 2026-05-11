@@ -11,7 +11,7 @@ export interface Music {
 
 export interface Image {
 	id: string;
-	file_key: string;
+	file_key: string | null;
 	name: string;
 	extension: string;
 	aspect_ratio: string;
@@ -41,7 +41,6 @@ export interface Album {
 	artist: string | null;
 	description: string | null;
 	cover_file_key: string | null;
-	cover_extension: string | null;
 	created_at: string;
 	updated_at: string;
 	music_count?: number;

@@ -345,11 +345,6 @@
 		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 	}
 	.ck { font-size: 0.62rem; color: #38b6ff; letter-spacing: 0.06em; }
-	.cr {
-		position: absolute; top: 6px; right: 6px;
-		font-size: 0.55rem; color: rgba(255,255,255,.15);
-		letter-spacing: 0.06em; line-height: 1;
-	}
 	.es {
 		grid-column: 1 / -1;
 		display: flex; flex-direction: column; align-items: center;
@@ -357,24 +352,6 @@
 		color: rgba(255,255,255,.18);
 	}
 	.es p { font-size: 0.78rem; letter-spacing: 0.2em; }
-
-	/* 翻页箭头 */
-	.nb {
-		width: 44px; height: 44px;
-		border-radius: 50%;
-		border: 1px solid rgba(255,255,255,.14);
-		background: rgba(255,255,255,.04);
-		color: rgba(255,255,255,.5);
-		display: flex; align-items: center; justify-content: center;
-		cursor: pointer; flex-shrink: 0;
-		transition: border-color 0.2s, color 0.2s, background 0.2s;
-	}
-	.nb:hover:not(:disabled) {
-		border-color: rgba(56,182,255,.5);
-		color: #38b6ff;
-		background: rgba(56,182,255,.06);
-	}
-	.nb:disabled { opacity: 0.3; cursor: not-allowed; }
 
 	/* 分页指示器 - 固定位置 */
 	.pg {
