@@ -134,12 +134,10 @@
 										</svg>
 									</div>
 								{/if}
-								<div class="co">
-									<p class="cn">{album.name}</p>
-									{#if album.artist}<p class="ca">{album.artist}</p>{/if}
-									<span class="ck">{album.music_count ?? 0} 首</span>
-								</div>
-	
+							</div>
+							<div class="ci">
+								<p class="cn">{album.name}</p>
+								{#if album.artist}<p class="ca">{album.artist}</p>{/if}
 							</div>
 						</a>
 					{/each}
@@ -299,20 +297,18 @@
 	.ac {
 		display: block;
 		text-decoration: none;
-		border: 1px solid rgba(255, 255, 255, 0.06);
-		transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+		transition: transform 0.3s ease;
 	}
-	.ac:hover {
-		transform: translateY(-6px);
-		box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(56, 182, 255, 0.15);
-		border-color: rgba(56, 182, 255, 0.2);
-	}
+	.ac:hover { transform: translateY(-5px); }
 	.cc {
 		position: relative;
 		aspect-ratio: 1 / 1;
 		overflow: hidden;
 		background: #0d0d1c;
+		border: 1px solid rgba(255,255,255,0.07);
+		transition: border-color 0.3s;
 	}
+	.ac:hover .cc { border-color: rgba(56,182,255,0.28); }
 	.cc img {
 		width: 100%; height: 100%;
 		object-fit: cover; display: block;
@@ -322,29 +318,24 @@
 	.cp {
 		width: 100%; height: 100%;
 		display: flex; align-items: center; justify-content: center;
-		color: rgba(255, 255, 255, 0.1);
+		color: rgba(255,255,255,0.1);
 	}
 	.cp svg { width: 40%; height: 40%; }
-	.co {
-		position: absolute; inset: 0;
-		background: linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,.3) 50%, transparent 100%);
-		display: flex; flex-direction: column; justify-content: flex-end;
-		padding: 0.85rem;
-		opacity: 0; transition: opacity 0.3s ease;
-	}
-	.ac:hover .co { opacity: 1; }
+	.ci { padding: 0.55rem 0.15rem 0; }
 	.cn {
-		font-size: 0.78rem; font-weight: 400;
-		color: rgba(255,255,255,.92); letter-spacing: 0.04em;
-		margin: 0 0 0.2rem;
+		font-size: 0.72rem;
+		color: rgba(255,255,255,0.72);
+		letter-spacing: 0.05em;
+		margin: 0 0 0.18rem;
 		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 	}
 	.ca {
-		font-size: 0.68rem; color: rgba(255,255,255,.45);
-		letter-spacing: 0.04em; margin: 0 0 0.35rem;
+		font-size: 0.6rem;
+		color: rgba(255,255,255,0.28);
+		letter-spacing: 0.06em;
+		margin: 0;
 		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 	}
-	.ck { font-size: 0.62rem; color: #38b6ff; letter-spacing: 0.06em; }
 	.es {
 		grid-column: 1 / -1;
 		display: flex; flex-direction: column; align-items: center;

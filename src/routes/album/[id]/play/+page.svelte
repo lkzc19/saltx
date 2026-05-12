@@ -209,6 +209,7 @@
 					max={duration || 1}
 					step="0.1"
 					value={currentTime}
+					style="--pct:{duration > 0 ? (currentTime / duration) * 100 : 0}%"
 					onmousedown={seekStart}
 					ontouchstart={seekStart}
 					oninput={seekInput}
@@ -402,11 +403,11 @@
 		border-bottom: 1px solid rgba(255,255,255,0.04);
 		color: rgba(255,255,255,0.35);
 		cursor: pointer; font-family: inherit; text-align: left;
-		transition: background 0.15s, color 0.15s;
+		transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 	}
-	.ti:hover { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.75); }
+	.ti:hover { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.75); box-shadow: inset 3px 0 0 rgba(255,255,255,0.15); }
 	.ti.active { color: rgba(255,255,255,0.85); }
-	.ti.playing { color: #38b6ff; }
+	.ti.playing { color: #38b6ff; box-shadow: inset 3px 0 0 rgba(56,182,255,0.6); background: rgba(56,182,255,0.03); }
 
 	.ti-num {
 		font-size: 0.62rem; color: rgba(255,255,255,0.18);
@@ -448,7 +449,7 @@
 		-webkit-appearance: none;
 		appearance: none;
 		height: 2px;
-		background: rgba(255,255,255,0.1);
+		background: linear-gradient(to right, rgba(56,182,255,0.75) var(--pct, 0%), rgba(255,255,255,0.1) var(--pct, 0%));
 		outline: none;
 		cursor: pointer;
 		border-radius: 1px;
@@ -467,7 +468,6 @@
 		background: #38b6ff;
 		border: none; cursor: pointer;
 	}
-	.prog-range:hover { background: rgba(255,255,255,0.18); }
 	.player-btns {
 		display: flex;
 		align-items: center;

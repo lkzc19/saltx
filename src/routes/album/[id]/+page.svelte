@@ -266,7 +266,9 @@
 		padding: 0.55rem 0.5rem;
 		border-bottom: 1px solid rgba(255,255,255,0.04);
 		color: rgba(255,255,255,0.3);
+		transition: color 0.15s, box-shadow 0.15s;
 	}
+	.ti:hover { color: rgba(255,255,255,0.6); box-shadow: inset 3px 0 0 rgba(56,182,255,0.35); }
 	.ti-n {
 		font-size: 0.6rem;
 		letter-spacing: 0.04em;
