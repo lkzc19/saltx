@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Image } from '$lib/types/music';
 
-	let { image, onclose, ondelete }: { image: Image | null; onclose: () => void; ondelete: (key: string) => void } = $props();
+	let { image, onclose, ondelete }: { image: Image | null; onclose: () => void; ondelete: (id: string) => void } = $props();
 </script>
 
 {#if image}
@@ -27,7 +27,7 @@
 					<p class="text-xs text-text-muted">{image.extension.toUpperCase()} · {image.aspect_ratio}</p>
 				</div>
 				<button
-					onclick={() => ondelete(image.file_key!)}
+					onclick={() => ondelete(image.id)}
 					class="flex h-9 items-center gap-2 rounded-md border border-error px-4 text-sm text-error transition-colors hover:bg-error hover:text-white"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

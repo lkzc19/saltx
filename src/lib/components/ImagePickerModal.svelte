@@ -108,7 +108,7 @@
 								onclick={() => handleSelect(img)}
 							>
 								<img
-									src={getThumbnailUrl(img.id)}
+									src={getThumbnailUrl(img.file_key!)}
 									alt={img.name}
 									class="h-full w-full object-cover"
 								/>

@@ -29,7 +29,7 @@
 	});
 
 	function handleCoverSelect(img: Image) {
-		coverFileKey = img.id;
+		coverFileKey = img.file_key;
 	}
 
 	async function handleSubmit(e: Event) {
