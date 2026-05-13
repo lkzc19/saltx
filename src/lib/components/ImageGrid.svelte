@@ -23,10 +23,10 @@
 					onclick={() => onselect(item)}
 				>
 					<img
-						src={getThumbnailUrl(item.id)}
-						alt={item.name}
-						class="h-full w-full object-cover"
-					/>
+							src={getThumbnailUrl(item.file_key!)}
+							alt={item.name}
+							class="h-full w-full object-cover"
+						/>
 					<div class="absolute inset-x-0 bottom-0 bg-black/60 px-2 py-1 opacity-0 transition-opacity group-hover:opacity-100">
 						<p class="truncate text-xs text-white">{item.name}</p>
 					</div>

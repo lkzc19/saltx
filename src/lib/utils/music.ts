@@ -12,16 +12,23 @@ export function getR2Url(fileKey: string): string {
 	return `/files/${fileKey}`;
 }
 
-// 图片文件路径（R2 完整路径）
-export function getImageThumbnailUrl(fileKey: string): string {
-	return `/files/${fileKey}`;
+// 图片缩略图
+export function getThumbnailUrl(fileKey: string): string {
+	if (fileKey.includes('/')) {
+		return `/files/${fileKey.replace(/(\.[^/.]+)$/, '_thumb.webp')}`;
+	}
+	return `/files/image/${fileKey}_thumb.webp`;
+}
+
+// 图片原图（全尺寸）
+export function getOriginalUrl(fileKey: string): string {
+	if (fileKey.includes('/')) {
+		return `/files/${fileKey}`;
+	}
+	return `/files/image/${fileKey}`;
 }
 
 // 兼容旧代码
-export function getThumbnailUrl(id: string): string {
-	return `/files/image/${id}_thumb.webp`;
-}
-
-export function getOriginalUrl(id: string, extension: string): string {
-	return `/files/image/${id}.${extension}`;
+export function getImageThumbnailUrl(fileKey: string): string {
+	return getThumbnailUrl(fileKey);
 }

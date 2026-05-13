@@ -31,13 +31,14 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	const bucket = platform!.env.BUCKET;
 	const db = getDb(platform!.env.DB);
 
-	// 插入记录（id 和 file_key 相同）
+	// 插入记录（file_key 存 R2 完整路径）
 	const id = nanoid8();
+	const fileKey = `image/${id}.${ext}`;
 	const record = await db
 		.insert(image)
 		.values({
 			id,
-			file_key: id,
+			file_key: fileKey,
 			name: fileName,
 			extension: ext,
 			aspect_ratio: aspectRatio
@@ -46,7 +47,6 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 		.get();
 
 	// 上传原图到 R2
-	const fileKey = `image/${id}.${ext}`;
 	await bucket.put(fileKey, await file.arrayBuffer(), {
 		httpMetadata: { contentType: file.type }
 	});
