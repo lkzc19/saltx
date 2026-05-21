@@ -6,7 +6,7 @@
 |------|------|------|
 | Workers | saltx | SvelteKit 全栈应用 |
 | D1 数据库 | saltx | 元数据存储（music、image 表） |
-| R2 存储桶 | saltx | 音乐文件、图片、缩略图 |
+| R2 存储桶 | saltx | 音乐文件、图片 |
 | 域名 | saltx.fun | 自定义域名（Custom Domain） |
 
 ---
@@ -61,11 +61,8 @@ npm run gen
 ### 初始化本地数据库
 
 ```bash
-# 按顺序执行所有迁移（本地）
+# 初始化本地数据库
 npx wrangler d1 execute saltx --local --file=migrations/001_initial.sql
-npx wrangler d1 execute saltx --local --file=migrations/002_image_file_key.sql
-npx wrangler d1 execute saltx --local --file=migrations/003_music_cover.sql
-npx wrangler d1 execute saltx --local --file=migrations/004_music_cover_file_key.sql
 ```
 
 ---
@@ -76,14 +73,11 @@ npx wrangler d1 execute saltx --local --file=migrations/004_music_cover_file_key
 # 登录（Token 过期时执行）
 npx wrangler login
 
-# 按顺序执行所有迁移（远程）
+# 初始化远程数据库
 npx wrangler d1 execute saltx --remote --file=migrations/001_initial.sql
-npx wrangler d1 execute saltx --remote --file=migrations/002_image_file_key.sql
-npx wrangler d1 execute saltx --remote --file=migrations/003_music_cover.sql
-npx wrangler d1 execute saltx --remote --file=migrations/004_music_cover_file_key.sql
 ```
 
-> 每次新建迁移文件后，需同时在本地和远程执行对应的 sql 文件。
+> 当前迁移目录已重置为单份初始化脚本。后续如再调整表结构，再新增新的迁移文件。
 
 ---
 

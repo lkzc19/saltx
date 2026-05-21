@@ -1,18 +1,21 @@
-CREATE TABLE 'music' (
-	'id' text PRIMARY KEY NOT NULL,
-	'name' text NOT NULL,
-	'artist' text NOT NULL,
-	'version' text NOT NULL,
-	'extension' text NOT NULL,
-	'created_at' text NOT NULL,
-	'updated_at' text NOT NULL
+CREATE TABLE music (
+	id TEXT PRIMARY KEY NOT NULL,
+	name TEXT NOT NULL,
+	artist TEXT NOT NULL,
+	extension TEXT NOT NULL,
+	file_key TEXT NOT NULL,
+	cover_file_key TEXT,
+	created_at TEXT NOT NULL,
+	updated_at TEXT NOT NULL
 );
-CREATE TABLE 'image' (
-	'id' text PRIMARY KEY NOT NULL,
-	'name' text NOT NULL,
-	'extension' text NOT NULL,
-	'aspect_ratio' text NOT NULL,
-	'thumbnail_key' text,
-	'created_at' text NOT NULL,
-	'updated_at' text NOT NULL
+
+CREATE TABLE image (
+	id TEXT PRIMARY KEY NOT NULL,
+	file_key TEXT NOT NULL,
+	name TEXT NOT NULL,
+	extension TEXT NOT NULL,
+	aspect_ratio TEXT NOT NULL,
+	background_color TEXT,
+	created_at TEXT NOT NULL,
+	updated_at TEXT NOT NULL
 );

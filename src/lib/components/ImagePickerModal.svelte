@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getThumbnailUrl } from '$lib/utils/music';
+	import { getOriginalUrl } from '$lib/utils/music';
 	import type { Image } from '$lib/types/music';
 
 	let {
@@ -108,7 +108,7 @@
 								onclick={() => handleSelect(img)}
 							>
 								<img
-									src={getThumbnailUrl(img.file_key!)}
+									src={getOriginalUrl(img.file_key)}
 									alt={img.name}
 									class="h-full w-full object-cover"
 								/>

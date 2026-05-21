@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Image } from '$lib/types/music';
+	import { getOriginalUrl } from '$lib/utils/music';
 
 	let { image, onclose, ondelete }: { image: Image | null; onclose: () => void; ondelete: (id: string) => void } = $props();
 </script>
@@ -19,12 +20,25 @@
 				</svg>
 			</button>
 
-			<img src="/files/{image.file_key}" alt={image.name} class="max-h-[80vh] max-w-[90vw] rounded-lg object-contain" />
+			<img
+				src={getOriginalUrl(image.file_key)}
+				alt={image.name}
+				class="max-h-[80vh] max-w-[90vw] rounded-lg object-contain"
+			/>
 
 			<div class="mt-4 flex items-center justify-between">
 				<div>
 					<p class="text-sm text-text">{image.name}</p>
 					<p class="text-xs text-text-muted">{image.extension.toUpperCase()} · {image.aspect_ratio}</p>
+					{#if image.background_color}
+						<div class="mt-2 flex items-center gap-2 text-xs text-text-muted">
+							<span
+								class="inline-block h-3 w-3 rounded-full border border-white/15"
+								style:background-color={image.background_color}
+							></span>
+							<span>{image.background_color}</span>
+						</div>
+					{/if}
 				</div>
 				<button
 					onclick={() => ondelete(image.id)}

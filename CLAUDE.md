@@ -33,11 +33,11 @@ npx wrangler d1 execute saltx --local --command="SELECT * FROM table LIMIT 10"
 
 | 类型 | R2 路径 | 访问 URL |
 |------|---------|---------|
-| 音乐文件 | `music/{id}/{version}.{ext}` | `/files/music/{id}/{version}.{ext}` |
+| 音乐文件 | `music/{id}.{ext}` | `/files/music/{id}.{ext}` |
 | 图片文件 | `image/{id}.{ext}` | `/files/image/{id}.{ext}` |
 
 - `image.file_key` 存完整 R2 路径（如 `image/abc123.webp`）
-- `album.cover_file_key` 和 `music.cover_file_key` 存 `image.file_key` 的值
+- `music.cover_file_key` 存 `image.file_key` 的值
 - 前端直接用 `/files/{file_key}` 访问，不需要额外拼接
 
 ## 代码检查

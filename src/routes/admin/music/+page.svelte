@@ -20,14 +20,14 @@
 		if (filters.artist) sp.set('artist', filters.artist);
 		if (filters.id) sp.set('id', filters.id);
 		const qs = sp.toString();
-		goto(qs ? resolve(`/admin/music?${qs}`) : resolve('/admin/music'));
+		goto(qs ? `${resolve('/admin/music', {})}?${qs}` : resolve('/admin/music', {}));
 	}
 
 	function handlePageChange(p: number, ps: number) {
 		const sp = new SvelteURLSearchParams(page.url.searchParams);
 		sp.set('page', String(p));
 		if (ps !== data.pageSize) sp.set('pageSize', String(ps));
-		goto(resolve(`/admin/music?${sp.toString()}`));
+		goto(`${resolve('/admin/music', {})}?${sp.toString()}`);
 	}
 
 	function handlePlay(item: Music) {

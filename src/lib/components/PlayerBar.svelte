@@ -3,12 +3,8 @@
 	import { onMount } from 'svelte';
 	import type { Howl } from 'howler';
 	import { playerState, registerPlayerControls } from '$lib/stores/admin.svelte';
-	import { buildMusicFileKey, getR2Url } from '$lib/utils/music';
+	import { getMusicUrl } from '$lib/utils/music';
 	import { get } from 'svelte/store';
-
-	function getMusicUrl(track: { id: string; version: string; extension: string }): string {
-		return getR2Url(buildMusicFileKey(track.id, track.version, track.extension));
-	}
 
 	onMount(() => {
 		if (!browser) return;
@@ -43,7 +39,7 @@
 
 		registerPlayerControls(togglePlay, seekTo);
 
-		function loadTrack(track: { id: string; version: string; extension: string } | null) {
+		function loadTrack(track: { file_key: string } | null) {
 			if (sound) {
 				sound.unload();
 				cancelAnimationFrame(animFrame);
@@ -51,9 +47,9 @@
 			}
 			if (!track || !HowlClass) return;
 
-			const howl = new HowlClass({
-				src: [getMusicUrl(track)],
-				onplay() {
+				const howl = new HowlClass({
+					src: [getMusicUrl(track.file_key)],
+					onplay() {
 					playerState.update((s) => ({ ...s, playing: true }));
 					animFrame = requestAnimationFrame(updateTime);
 				},

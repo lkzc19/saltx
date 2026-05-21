@@ -16,9 +16,9 @@
 
 	function handleSearch(filters: { name: string }) {
 		if (filters.name) {
-			goto(resolve(`/admin/image?name=${encodeURIComponent(filters.name)}`));
+			goto(`${resolve('/admin/image', {})}?name=${encodeURIComponent(filters.name)}`);
 		} else {
-			goto(resolve('/admin/image'));
+			goto(resolve('/admin/image', {}));
 		}
 	}
 
@@ -26,7 +26,7 @@
 		const sp = new SvelteURLSearchParams(page.url.searchParams);
 		sp.set('page', String(p));
 		if (ps !== data.pageSize) sp.set('pageSize', String(ps));
-		goto(resolve(`/admin/image?${sp.toString()}`));
+		goto(`${resolve('/admin/image', {})}?${sp.toString()}`);
 	}
 
 	function handleSelect(item: Image) {

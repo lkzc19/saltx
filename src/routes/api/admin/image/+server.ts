@@ -9,13 +9,19 @@ function getExtension(filename: string): string {
 	return dot === -1 ? '' : filename.slice(dot + 1);
 }
 
+function normalizeBackgroundColor(value: string | null): string | null {
+	if (!value) return null;
+	const normalized = value.trim().toUpperCase();
+	return /^#[0-9A-F]{6}$/.test(normalized) ? normalized : null;
+}
+
 export const POST: RequestHandler = async ({ request, platform }) => {
 	const formData = await request.formData();
 
 	const name = formData.get('name')?.toString();
 	const aspectRatio = formData.get('aspect_ratio')?.toString() ?? '1:1';
+	const backgroundColor = normalizeBackgroundColor(formData.get('background_color')?.toString() ?? null);
 	const file = formData.get('file') as File | null;
-	const thumbnail = formData.get('thumbnail') as File | null;
 
 	if (!file) {
 		return json({ error: '缺少必填字段: file' }, { status: 400 });
@@ -23,6 +29,10 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 
 	if (aspectRatio !== '1:1') {
 		return json({ error: '暂仅支持 1:1 比例' }, { status: 400 });
+	}
+
+	if (formData.has('background_color') && !backgroundColor) {
+		return json({ error: 'background_color 格式不正确，需为 HEX 色值' }, { status: 400 });
 	}
 
 	const fileName = name ?? file.name.replace(/\.[^/.]+$/, '');
@@ -41,7 +51,8 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			file_key: fileKey,
 			name: fileName,
 			extension: ext,
-			aspect_ratio: aspectRatio
+			aspect_ratio: aspectRatio,
+			background_color: backgroundColor
 		})
 		.returning()
 		.get();
@@ -50,14 +61,6 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	await bucket.put(fileKey, await file.arrayBuffer(), {
 		httpMetadata: { contentType: file.type }
 	});
-
-	// 上传缩略图（如果提供）
-	if (thumbnail) {
-		const thumbnailKey = `image/${id}_thumb.webp`;
-		await bucket.put(thumbnailKey, await thumbnail.arrayBuffer(), {
-			httpMetadata: { contentType: 'image/webp' }
-		});
-	}
 
 	return json(record, { status: 201 });
 };
@@ -113,11 +116,9 @@ export const DELETE: RequestHandler = async ({ url, platform }) => {
 
 	const bucket = platform!.env.BUCKET;
 	// 删除原图
-	const fileKey = `image/${existing.id}.${existing.extension}`;
-	await bucket.delete(fileKey);
-	// 删除缩略图
-	const thumbnailKey = `image/${existing.id}_thumb.webp`;
-	await bucket.delete(thumbnailKey);
+	if (existing.file_key) {
+		await bucket.delete(existing.file_key);
+	}
 
 	await db.delete(image).where(eq(image.id, id));
 

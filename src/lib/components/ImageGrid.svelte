@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Image } from '$lib/types/music';
-	import { getThumbnailUrl } from '$lib/utils/music';
+	import { getOriginalUrl } from '$lib/utils/music';
 
 	let {
 		items,
@@ -23,10 +23,10 @@
 					onclick={() => onselect(item)}
 				>
 					<img
-							src={getThumbnailUrl(item.file_key!)}
-							alt={item.name}
-							class="h-full w-full object-cover"
-						/>
+						src={getOriginalUrl(item.file_key)}
+						alt={item.name}
+						class="h-full w-full object-cover"
+					/>
 					<div class="absolute inset-x-0 bottom-0 bg-black/60 px-2 py-1 opacity-0 transition-opacity group-hover:opacity-100">
 						<p class="truncate text-xs text-white">{item.name}</p>
 					</div>

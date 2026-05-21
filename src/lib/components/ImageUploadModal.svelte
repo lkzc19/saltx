@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Cropper from 'svelte-easy-crop';
 	import type { CropArea } from 'svelte-easy-crop';
+	import { getMatchingBackgroundColor } from '$lib/utils/image-color';
 
 	let {
 		open = $bindable(false),
@@ -39,7 +40,10 @@
 		croppedAreaPixels = e.pixels;
 	}
 
-	async function generateFiles(): Promise<{ croppedFile: File; thumbnailFile: File }> {
+	async function generateFiles(): Promise<{
+		croppedFile: File;
+		backgroundColor: string;
+	}> {
 		return new Promise((resolve, reject) => {
 			const img = new Image();
 			img.onload = () => {
@@ -51,21 +55,16 @@
 				const ctx = canvas.getContext('2d')!;
 				ctx.drawImage(img, px.x, px.y, px.width, px.height, 0, 0, px.width, px.height);
 
-				const thumbCanvas = document.createElement('canvas');
-				thumbCanvas.width = 200;
-				thumbCanvas.height = 200;
-				thumbCanvas.getContext('2d')!.drawImage(img, px.x, px.y, px.width, px.height, 0, 0, 200, 200);
-
 				const toBlob = (c: HTMLCanvasElement, quality: number) =>
 					new Promise<Blob>((res, rej) =>
 						c.toBlob((b) => (b ? res(b) : rej(new Error('canvas toBlob failed'))), 'image/webp', quality)
 					);
 
-				Promise.all([toBlob(canvas, 0.9), toBlob(thumbCanvas, 0.8)])
-					.then(([croppedBlob, thumbBlob]) => {
+				toBlob(canvas, 0.9)
+					.then((croppedBlob) => {
 						resolve({
 							croppedFile: new File([croppedBlob], 'image.webp', { type: 'image/webp' }),
-							thumbnailFile: new File([thumbBlob], 'thumb.webp', { type: 'image/webp' })
+							backgroundColor: getMatchingBackgroundColor(canvas)
 						});
 					})
 					.catch(reject);
@@ -81,13 +80,13 @@
 		error = '';
 
 		try {
-			const { croppedFile, thumbnailFile } = await generateFiles();
+			const { croppedFile, backgroundColor } = await generateFiles();
 
 			const formData = new FormData();
 			if (name) formData.set('name', name);
 			formData.set('file', croppedFile);
-			formData.set('thumbnail', thumbnailFile);
 			formData.set('aspect_ratio', '1:1');
+			formData.set('background_color', backgroundColor);
 
 			const res = await fetch('/api/admin/image', { method: 'POST', body: formData });
 			if (!res.ok) {

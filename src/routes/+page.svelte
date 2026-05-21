@@ -1,372 +1,719 @@
 <script lang="ts">
-	import type { Album } from '$lib/types/music';
-	import SiteNavbar from '$lib/components/SiteNavbar.svelte';
-	import SiteFooter from '$lib/components/SiteFooter.svelte';
-	import SiteBg from '$lib/components/SiteBg.svelte';
+	import { onDestroy, onMount } from 'svelte';
+	import type { Music } from '$lib/types/music';
+	import { getMusicUrl, getOriginalUrl } from '$lib/utils/music';
 
-	let { data } = $props();
+	type PlayerTrack = Music & { background_color?: string | null };
+	type AudioContextWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
 
-	let albums = $state<Album[]>([]);
-	let currentPage = $state(1);
-	let totalPages = $state(1);
-	let searchQuery = $state('');
-	let loading = $state(false);
+	const IDLE_TIMEOUT = 3000;
+	const BAR_COUNT = 120;
+	const DEFAULT_BACKGROUND = '#243042';
+	const DEFAULT_BAR_HEIGHT = 0.08;
 
-	$effect(() => {
-		albums = data.items;
-		currentPage = data.page;
-		totalPages = data.totalPages;
-	});
+	let tracks = $state<PlayerTrack[]>([]);
+	let loading = $state(true);
+	let error = $state('');
+	let currentIndex = $state(0);
+	let currentTime = $state(0);
+	let duration = $state(0);
+	let playing = $state(false);
+	let idleChromeHidden = $state(false);
+	let audioEl = $state<HTMLAudioElement | null>(null);
+	let waveHeights = $state<number[]>(Array.from({ length: BAR_COUNT }, () => DEFAULT_BAR_HEIGHT));
 
-	const PAGE_SIZE = 10;
+	let idleTimer: ReturnType<typeof setTimeout> | undefined;
+	let animationFrame = 0;
+	let audioContext: AudioContext | null = null;
+	let analyser: AnalyserNode | null = null;
+	let sourceNode: MediaElementAudioSourceNode | null = null;
+	let frequencyData: InstanceType<typeof Uint8Array> | null = null;
+	let mediaQuery: MediaQueryList | null = null;
 
-	async function loadPage(page: number, name = '') {
+	const currentTrack = $derived(tracks[currentIndex] ?? null);
+	const backgroundHex = $derived(currentTrack?.background_color ?? DEFAULT_BACKGROUND);
+	const backgroundRgb = $derived(hexToRgb(backgroundHex));
+	const captionText = $derived(
+		tracks.length > 0
+			? `ALL TRACKS PLAY IN ORDER · ${String(currentIndex + 1).padStart(2, '0')} / ${String(tracks.length).padStart(2, '0')}`
+			: 'SALT X LISTENING ROOM'
+	);
+
+	function hexToRgb(hex: string): string {
+		const normalized = hex.replace('#', '');
+		if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return '36, 48, 66';
+		const red = parseInt(normalized.slice(0, 2), 16);
+		const green = parseInt(normalized.slice(2, 4), 16);
+		const blue = parseInt(normalized.slice(4, 6), 16);
+		return `${red}, ${green}, ${blue}`;
+	}
+
+	function formatTime(value: number): string {
+		if (!isFinite(value) || value < 0) return '0:00';
+		const minutes = Math.floor(value / 60);
+		const seconds = Math.floor(value % 60);
+		return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+	}
+
+	function resetIdleTimer() {
+		if (!mediaQuery?.matches) return;
+		idleChromeHidden = false;
+		if (idleTimer) clearTimeout(idleTimer);
+		idleTimer = setTimeout(() => {
+			idleChromeHidden = true;
+		}, IDLE_TIMEOUT);
+	}
+
+	function setupIdleChrome() {
+		mediaQuery = window.matchMedia('(pointer:fine)');
+		if (!mediaQuery.matches) return;
+		const reveal = () => resetIdleTimer();
+		window.addEventListener('mousemove', reveal);
+		window.addEventListener('keydown', reveal);
+		resetIdleTimer();
+
+		return () => {
+			window.removeEventListener('mousemove', reveal);
+			window.removeEventListener('keydown', reveal);
+		};
+	}
+
+	async function fetchTracks() {
 		loading = true;
+		error = '';
+
 		try {
-			const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
-			if (name) params.set('name', name);
-			const res = await fetch(`/api/album/list?${params}`);
-			if (res.ok) {
-				const json = (await res.json()) as { items: Album[]; page: number; totalPages: number };
-				albums = json.items;
-				currentPage = json.page;
-				totalPages = json.totalPages;
-			}
+			const res = await fetch('/api/music');
+			if (!res.ok) throw new Error('获取音乐列表失败');
+			const data = (await res.json()) as { items: PlayerTrack[] };
+			tracks = data.items;
+			currentIndex = 0;
+			if (data.items.length === 0) error = '暂无可播放的音乐';
+		} catch (err) {
+			error = (err as Error).message;
 		} finally {
 			loading = false;
 		}
 	}
 
-	function handleSearch(e: Event) {
-		e.preventDefault();
-		loadPage(1, searchQuery);
+	function destroyAudioGraph() {
+		if (animationFrame) cancelAnimationFrame(animationFrame);
+		animationFrame = 0;
+		if (sourceNode) {
+			sourceNode.disconnect();
+			sourceNode = null;
+		}
+		if (analyser) {
+			analyser.disconnect();
+			analyser = null;
+		}
+		if (audioContext) {
+			void audioContext.close();
+			audioContext = null;
+		}
+		frequencyData = null;
 	}
 
-	function goToPage(p: number) {
-		if (p < 1 || p > totalPages || p === currentPage || loading) return;
-		loadPage(p, searchQuery);
+	async function ensureAudioGraph() {
+		if (!audioEl) return;
+
+		const ctor = window.AudioContext ?? (window as AudioContextWindow).webkitAudioContext;
+		if (!ctor) return;
+
+		if (!audioContext) {
+			audioContext = new ctor();
+			analyser = audioContext.createAnalyser();
+			analyser.fftSize = 256;
+			analyser.smoothingTimeConstant = 0.82;
+			sourceNode = audioContext.createMediaElementSource(audioEl);
+			sourceNode.connect(analyser);
+			analyser.connect(audioContext.destination);
+			frequencyData = new Uint8Array(analyser.frequencyBinCount);
+			startWaveformLoop();
+		}
+
+		if (audioContext.state === 'suspended') {
+			await audioContext.resume();
+		}
 	}
+
+	function startWaveformLoop() {
+		if (animationFrame) cancelAnimationFrame(animationFrame);
+
+		const tick = () => {
+			if (analyser && frequencyData && playing) {
+				analyser.getByteFrequencyData(frequencyData);
+				const nextHeights = Array.from({ length: BAR_COUNT }, (_, index) => {
+					const start = Math.floor((index / BAR_COUNT) * frequencyData!.length * 0.82);
+					const end = Math.max(start + 1, Math.floor(((index + 1) / BAR_COUNT) * frequencyData!.length * 0.82));
+					let sum = 0;
+					for (let cursor = start; cursor < end; cursor += 1) sum += frequencyData![cursor];
+					const average = sum / (end - start);
+					const normalized = Math.pow(average / 255, 1.2);
+					return Math.min(0.26, Math.max(DEFAULT_BAR_HEIGHT, normalized * 0.22));
+				});
+
+				waveHeights = waveHeights.map((value, index) => value * 0.55 + nextHeights[index] * 0.45);
+			} else {
+				waveHeights = waveHeights.map((value) => value * 0.88 + DEFAULT_BAR_HEIGHT * 0.12);
+			}
+
+			animationFrame = window.requestAnimationFrame(tick);
+		};
+
+		animationFrame = window.requestAnimationFrame(tick);
+	}
+
+	function getTrackIndex(index: number): number {
+		if (tracks.length === 0) return 0;
+		return (index + tracks.length) % tracks.length;
+	}
+
+	async function loadTrack(index: number, autoplay = false) {
+		if (!audioEl || tracks.length === 0) return;
+
+		const nextIndex = getTrackIndex(index);
+		const track = tracks[nextIndex];
+		currentIndex = nextIndex;
+		currentTime = 0;
+		duration = 0;
+		audioEl.src = getMusicUrl(track.file_key);
+		audioEl.load();
+
+		if (!autoplay) {
+			playing = false;
+			resetIdleTimer();
+			return;
+		}
+
+		await ensureAudioGraph();
+		try {
+			await audioEl.play();
+			playing = true;
+		} catch {
+			playing = false;
+		}
+		resetIdleTimer();
+	}
+
+	async function togglePlay() {
+		if (!audioEl || tracks.length === 0) return;
+		resetIdleTimer();
+
+		if (!audioEl.src) {
+			await loadTrack(currentIndex, true);
+			return;
+		}
+
+		if (playing) {
+			audioEl.pause();
+			playing = false;
+			return;
+		}
+
+		await ensureAudioGraph();
+		try {
+			await audioEl.play();
+			playing = true;
+		} catch {
+			playing = false;
+		}
+	}
+
+	async function playPrevious() {
+		await loadTrack(currentIndex - 1, playing);
+	}
+
+	async function playNext() {
+		await loadTrack(currentIndex + 1, playing);
+	}
+
+	function handleTimeUpdate() {
+		if (audioEl) currentTime = audioEl.currentTime;
+	}
+
+	function handleLoadedMetadata() {
+		if (audioEl) duration = audioEl.duration || 0;
+	}
+
+	function handleSeek(event: Event) {
+		if (!audioEl) return;
+		const value = Number((event.currentTarget as HTMLInputElement).value);
+		audioEl.currentTime = value;
+		currentTime = value;
+		resetIdleTimer();
+	}
+
+	async function handleEnded() {
+		await loadTrack(currentIndex + 1, true);
+	}
+
+	onMount(() => {
+		void fetchTracks();
+		const cleanupIdle = setupIdleChrome();
+
+		return () => {
+			if (cleanupIdle) cleanupIdle();
+		};
+	});
+
+	$effect(() => {
+		if (audioEl && tracks.length > 0 && !audioEl.src) {
+			void loadTrack(currentIndex, false);
+		}
+	});
+
+	onDestroy(() => {
+		if (idleTimer) clearTimeout(idleTimer);
+		destroyAudioGraph();
+	});
 </script>
 
 <svelte:head>
-	<title>SALT X — 专辑陈列</title>
+	<title>{currentTrack ? `${currentTrack.name} — SALT X` : 'SALT X'}</title>
 </svelte:head>
 
-<div class="pr">
-	<SiteBg />
-	<SiteNavbar />
+<svelte:window onmousemove={resetIdleTimer} onmousedown={resetIdleTimer} ontouchstart={resetIdleTimer} />
 
-	<main class="mc">
-		<!-- 搜索 + 标题行 -->
-		<div class="sh">
-			<form onsubmit={handleSearch} class="sf">
-				<input
-					type="text"
-					bind:value={searchQuery}
-					placeholder="搜索曲目"
-					class="si"
-					aria-label="搜索曲目"
-				/>
-				<button type="submit" class="sb" aria-label="搜索">
-					<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-						<circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-					</svg>
-				</button>
-			</form>
+<audio
+	bind:this={audioEl}
+	onended={handleEnded}
+	ontimeupdate={handleTimeUpdate}
+	onloadedmetadata={handleLoadedMetadata}
+	onplay={() => (playing = true)}
+	onpause={() => (playing = false)}
+></audio>
 
-			<div class="st">
-				<svg class="di" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-					<circle cx="12" cy="12" r="10" />
-					<circle cx="12" cy="12" r="3" />
-					<circle cx="12" cy="12" r="6.5" stroke-dasharray="2 3" />
-				</svg>
-				<h1 class="tt">专辑陈列</h1>
-			</div>
-		</div>
+<div
+	class="player-page"
+	style={`--accent-color:${backgroundHex}; --accent-rgb:${backgroundRgb};`}
+>
+	<div class="background-layer"></div>
+	<div class="background-glow"></div>
 
-		<!-- 翻页按钮 -->
-			{#if totalPages > 1}
-				<button
-					class="pb pb-prev"
-					onclick={() => goToPage(currentPage > 1 ? currentPage - 1 : totalPages)}
-					disabled={loading}
-					aria-label="上一页"
-				>
-					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-						<path d="M15 18l-6-6 6-6" />
-					</svg>
-				</button>
-				<button
-					class="pb pb-next"
-					onclick={() => goToPage(currentPage < totalPages ? currentPage + 1 : 1)}
-					disabled={loading}
-					aria-label="下一页"
-				>
-					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-						<path d="M9 18l6-6-6-6" />
-					</svg>
-				</button>
-			{/if}
+	<header class:hidden={idleChromeHidden}>
+		<div class="logo">saltx</div>
+	</header>
 
-			<!-- 专辑网格 -->
-			<div class="ag" class:loading>
-				{#if albums.length === 0}
-					<div class="es">
-						<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-							<circle cx="12" cy="12" r="10" />
-							<circle cx="12" cy="12" r="3" />
-							<path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
-						</svg>
-						<p>暂无专辑</p>
+	<main>
+		{#if loading}
+			<div class="empty-state">正在装载音乐列表...</div>
+		{:else if error}
+			<div class="empty-state">{error}</div>
+		{:else if currentTrack}
+			<div class="stage">
+				<div class="cover-column">
+					<div class="cover-shell">
+						{#if currentTrack.cover_file_key}
+							<img class="cover" src={getOriginalUrl(currentTrack.cover_file_key)} alt={currentTrack.name} />
+						{:else}
+							<div class="cover placeholder">SALT X</div>
+						{/if}
 					</div>
-				{:else}
-					{#each albums as album (album.id)}
-						<a href="/album/{album.id}" class="ac">
-							<div class="cc">
-								{#if album.cover_file_key}
-									<img src="/files/{album.cover_file_key}" alt={album.name} loading="lazy" />
-								{:else}
-									<div class="cp">
-										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-											<circle cx="12" cy="12" r="10" />
-											<circle cx="12" cy="12" r="3" />
-											<circle cx="12" cy="12" r="6.5" stroke-dasharray="2 3" />
-										</svg>
-									</div>
-								{/if}
-							</div>
-							<div class="ci">
-								<p class="cn">{album.name}</p>
-								{#if album.artist}<p class="ca">{album.artist}</p>{/if}
-							</div>
-						</a>
-					{/each}
-				{/if}
-			</div>
 
-		<!-- 分页指示器 -->
-		{#if totalPages > 1}
-			<div class="pg" role="navigation" aria-label="分页">
-				{#each Array(totalPages) as _, i (i)}
-					<button
-						class="pd"
-						class:active={currentPage === i + 1}
-						onclick={() => goToPage(i + 1)}
-						aria-label="第 {i + 1} 页"
-						aria-current={currentPage === i + 1 ? 'page' : undefined}
-					></button>
-				{/each}
+					<div class="left-chrome" class:hidden={idleChromeHidden}>
+						<div class="time-row">
+							<span>{formatTime(currentTime)}</span>
+							<span>{formatTime(duration)}</span>
+						</div>
+
+						<input
+							class="progress"
+							type="range"
+							min="0"
+							max={duration || 0}
+							step="0.1"
+							value={currentTime}
+							oninput={handleSeek}
+							aria-label="播放进度"
+							style={`--progress:${duration > 0 ? `${(currentTime / duration) * 100}%` : '0%'}`}
+						/>
+
+						<div class="transport">
+							<button type="button" onclick={playPrevious} aria-label="上一首">
+								<svg viewBox="0 0 24 24" fill="currentColor">
+									<path d="M6 5h2v14H6zm3 7l9 6V6z" />
+								</svg>
+							</button>
+							<button type="button" class="play-toggle" onclick={togglePlay} aria-label={playing ? '暂停' : '播放'}>
+								{#if playing}
+									<svg viewBox="0 0 24 24" fill="currentColor">
+										<rect x="6" y="5" width="4" height="14" rx="1" />
+										<rect x="14" y="5" width="4" height="14" rx="1" />
+									</svg>
+								{:else}
+									<svg viewBox="0 0 24 24" fill="currentColor">
+										<path d="M8 5v14l11-7z" />
+									</svg>
+								{/if}
+							</button>
+							<button type="button" onclick={playNext} aria-label="下一首">
+								<svg viewBox="0 0 24 24" fill="currentColor">
+									<path d="M18 5h-2v14h2zm-3 7L6 6v12z" />
+								</svg>
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="meta-column">
+					<div class="meta-stack">
+						<h1>{currentTrack.name}</h1>
+						<p class="artist">{currentTrack.artist}</p>
+
+						<div class="waveform" aria-hidden="true">
+							{#each waveHeights as height, index (index)}
+								<span class="wave-bar" style={`--bar-height:${height}`}></span>
+							{/each}
+						</div>
+					</div>
+
+					<p class="caption">{captionText}</p>
+				</div>
 			</div>
 		{/if}
 	</main>
 
-	<SiteFooter />
+	<footer class:hidden={idleChromeHidden}>
+		<p>SALT X listening room</p>
+	</footer>
 </div>
 
 <style>
-	.pr {
+	.player-page {
+		--accent-color: #243042;
+		--accent-rgb: 36, 48, 66;
 		min-height: 100vh;
-		background-color: #07070f;
 		position: relative;
-		overflow-x: hidden;
-		display: flex;
-		flex-direction: column;
+		overflow: hidden;
+		background: var(--accent-color);
+		color: rgba(255, 255, 255, 0.94);
 	}
 
-	/* 主内容 */
-	.mc {
-		max-width: 1440px;
-		width: 100%;
-		margin: 0 auto;
-		padding: 6rem 3rem 5rem;
+	.background-layer,
+	.background-glow {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	.background-layer {
+		display: none;
+	}
+
+	.background-glow {
+		display: none;
+	}
+
+	header,
+	footer,
+	.left-chrome {
+		transition: opacity 0.28s ease;
+		will-change: opacity;
+	}
+
+	header.hidden,
+	footer.hidden,
+	.left-chrome.hidden {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	header {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 1;
+		padding: 2rem 2.5rem;
+	}
+
+	.logo {
+		font-size: 0.82rem;
+		letter-spacing: 0.42em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.88);
+	}
+
+	main {
 		position: relative;
 		z-index: 1;
-		flex: 1;
+		min-height: 100vh;
+		padding: 6.8rem 2.5rem 4.8rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
-	/* 搜索 + 标题行 */
-	.sh {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 3rem;
-	}
-	.sf {
-		display: flex;
-		align-items: center;
-		border: 1px solid rgba(255, 255, 255, 0.12);
-		border-radius: 2px;
-		overflow: hidden;
-		background: rgba(255, 255, 255, 0.03);
-		transition: border-color 0.2s;
-	}
-	.sf:focus-within { border-color: rgba(56, 182, 255, 0.4); }
-	.si {
-		background: transparent;
-		border: none;
-		outline: none;
-		padding: 0.6rem 1rem;
-		font-size: 0.78rem;
-		color: rgba(255, 255, 255, 0.7);
-		letter-spacing: 0.08em;
-		width: 220px;
-		font-family: inherit;
-	}
-	.si::placeholder { color: rgba(255, 255, 255, 0.22); }
-	.sb {
-		background: transparent;
-		border: none;
-		border-left: 1px solid rgba(255, 255, 255, 0.08);
-		padding: 0.6rem 0.85rem;
-		color: rgba(255, 255, 255, 0.3);
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		transition: color 0.2s;
-	}
-	.sb:hover { color: rgba(255, 255, 255, 0.7); }
-	.st { display: flex; align-items: center; gap: 0.75rem; }
-	.di { width: 28px; height: 28px; color: rgba(255, 255, 255, 0.25); }
-	.tt {
-		font-size: 0.85rem;
-		font-weight: 300;
-		letter-spacing: 0.35em;
-		color: rgba(255, 255, 255, 0.7);
-		margin: 0;
-	}
-
-	/* 专辑网格 */
-	.ag {
+	.stage {
+		--panel-width: clamp(320px, 32vw, 360px);
+		--panel-gap: calc(var(--panel-width) * 0.3);
+		width: min(calc(var(--panel-width) * 2 + var(--panel-gap)), 100%);
 		display: grid;
-		grid-template-columns: repeat(5, 1fr);
-		gap: 1rem;
-		transition: opacity 0.3s;
+		grid-template-columns: repeat(2, var(--panel-width));
+		justify-content: center;
+		align-items: start;
+		gap: var(--panel-gap);
 	}
-	.ag.loading { opacity: 0.4; pointer-events: none; }
 
-	/* 1920px+ 大屏：6 列，加大间距 */
-	@media (min-width: 1920px) {
-		.mc { max-width: 1760px; padding: 7rem 4rem 6rem; }
-		.ag { grid-template-columns: repeat(6, 1fr); gap: 1.25rem; }
+	.cover-column {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 1.1rem;
+		width: 100%;
+		max-width: 360px;
+		justify-self: center;
 	}
-	/* 1440px–1919px：5 列（默认） */
-	@media (min-width: 1280px) and (max-width: 1439px) {
-		.mc { padding: 6rem 2.5rem 5rem; }
-		.ag { grid-template-columns: repeat(5, 1fr); }
-	}
-	/* 1024px–1279px：4 列 */
-	@media (min-width: 1025px) and (max-width: 1279px) {
-		.mc { padding: 6rem 2rem 5rem; }
-		.ag { grid-template-columns: repeat(4, 1fr); }
-	}
-	/* 768px–1024px：3 列 */
-	@media (max-width: 1024px) { .ag { grid-template-columns: repeat(3, 1fr); } }
-	/* 480px–767px：2 列 */
-	@media (max-width: 640px) { .ag { grid-template-columns: repeat(2, 1fr); } }
 
-	/* 翻页按钮 - 固定在左侧 logo 下方 */
-	.pb {
-		position: fixed;
-		top: 50%;
-		transform: translateY(-50%);
-		width: 40px; height: 40px;
-		border-radius: 50%;
-		border: 1px solid rgba(255,255,255,.14);
-		background: rgba(7,7,15,.85);
-		backdrop-filter: blur(10px);
-		color: rgba(255,255,255,.4);
-		display: flex; align-items: center; justify-content: center;
-		cursor: pointer;
-		z-index: 20;
-		transition: border-color 0.2s, color 0.2s, background 0.2s;
-	}
-	.pb-prev { left: 1.5rem; }
-	.pb-next { right: 1.5rem; }
-	@media (min-width: 1920px) {
-		.pb-prev { left: 2.5rem; }
-		.pb-next { right: 2.5rem; }
-	}
-	.pb:hover:not(:disabled) {
-		border-color: rgba(56,182,255,.5);
-		color: #38b6ff;
-		background: rgba(56,182,255,.08);
-	}
-	.pb:disabled { opacity: 0.2; cursor: not-allowed; }
-
-	/* 专辑卡片 */
-	.ac {
-		display: block;
-		text-decoration: none;
-		transition: transform 0.3s ease;
-	}
-	.ac:hover { transform: translateY(-5px); }
-	.cc {
+	.cover-shell {
 		position: relative;
 		aspect-ratio: 1 / 1;
 		overflow: hidden;
-		background: #0d0d1c;
-		border: 1px solid rgba(255,255,255,0.07);
-		transition: border-color 0.3s;
+		background: rgba(255, 255, 255, 0.04);
 	}
-	.ac:hover .cc { border-color: rgba(56,182,255,0.28); }
-	.cc img {
-		width: 100%; height: 100%;
-		object-fit: cover; display: block;
-		transition: transform 0.5s ease;
+
+	.cover {
+		width: 100%;
+		height: 100%;
+		display: block;
+		object-fit: cover;
 	}
-	.ac:hover .cc img { transform: scale(1.04); }
-	.cp {
-		width: 100%; height: 100%;
-		display: flex; align-items: center; justify-content: center;
-		color: rgba(255,255,255,0.1);
+
+	.cover.placeholder {
+		display: grid;
+		place-items: center;
+		height: 100%;
+		font-size: 1rem;
+		letter-spacing: 0.4em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.55);
 	}
-	.cp svg { width: 40%; height: 40%; }
-	.ci { padding: 0.55rem 0.15rem 0; }
-	.cn {
+
+	.left-chrome {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+	}
+
+	.time-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 		font-size: 0.72rem;
-		color: rgba(255,255,255,0.72);
-		letter-spacing: 0.05em;
-		margin: 0 0 0.18rem;
-		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+		letter-spacing: 0.12em;
+		color: rgba(255, 255, 255, 0.44);
+		font-variant-numeric: tabular-nums;
 	}
-	.ca {
-		font-size: 0.6rem;
-		color: rgba(255,255,255,0.28);
-		letter-spacing: 0.06em;
-		margin: 0;
-		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-	}
-	.es {
-		grid-column: 1 / -1;
-		display: flex; flex-direction: column; align-items: center;
-		gap: 1rem; padding: 5rem 0;
-		color: rgba(255,255,255,.18);
-	}
-	.es p { font-size: 0.78rem; letter-spacing: 0.2em; }
 
-	/* 分页指示器 - 固定位置 */
-	.pg {
-		position: absolute;
-		bottom: 3rem;
-		left: 50%;
-		transform: translateX(-50%);
-		display: flex; align-items: center; justify-content: center;
-		gap: 0.75rem;
+	.progress {
+		width: 100%;
+		height: 8px;
+		appearance: none;
+		-webkit-appearance: none;
+		border: 1px solid rgba(255, 255, 255, 0.42);
+		background: linear-gradient(
+			to right,
+			#ffffff var(--progress),
+			rgba(255, 255, 255, 0.08) var(--progress)
+		);
+		cursor: pointer;
+		outline: none;
 	}
-	.pd {
-		width: 12px; height: 12px;
-		border-radius: 0;
-		border: 1px solid rgba(255,255,255,.4);
+
+	.progress::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		width: 6px;
+		height: 16px;
+		background: #fff;
+		border: 1px solid rgba(0, 0, 0, 0.35);
+		box-shadow: none;
+	}
+
+	.progress::-moz-range-thumb {
+		width: 6px;
+		height: 16px;
+		background: #fff;
+		border: 1px solid rgba(0, 0, 0, 0.35);
+		box-shadow: none;
+	}
+
+	.transport {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1.4rem;
+	}
+
+	.transport button {
+		width: 42px;
+		height: 42px;
+		border: 0;
 		background: transparent;
-		cursor: pointer; padding: 0;
-		transition: background 0.2s, border-color 0.2s;
+		color: rgba(255, 255, 255, 0.52);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: color 0.2s ease, transform 0.2s ease, background 0.2s ease;
 	}
-	.pd.active { background: #fff; border-color: #fff; }
-	.pd:hover:not(.active) { border-color: rgba(255,255,255,.8); }
 
-	@media (max-width: 768px) {
-		.mc { padding: 5rem 1.5rem 4rem; }
-		.sh { flex-direction: column; align-items: flex-start; gap: 1.25rem; }
-		.si { width: 160px; }
+	.transport button:hover {
+		color: rgba(255, 255, 255, 0.92);
+		transform: translateY(-1px);
+	}
+
+	.transport svg {
+		width: 18px;
+		height: 18px;
+	}
+
+	.play-toggle {
+		width: 54px !important;
+		height: 54px !important;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.08) !important;
+		color: #fff !important;
+		box-shadow:
+			0 0 0 1px rgba(255, 255, 255, 0.08),
+			0 14px 40px rgba(0, 0, 0, 0.28);
+	}
+
+	.play-toggle svg {
+		width: 22px;
+		height: 22px;
+	}
+
+	.meta-column {
+		width: 100%;
+		max-width: 360px;
+		height: 360px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-end;
+		justify-self: center;
+		padding: 0;
+		text-align: center;
+	}
+
+	.meta-stack {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-end;
+		width: 100%;
+	}
+
+	h1 {
+		margin: 0;
+		font-size: clamp(1.65rem, 3.2vw, 2.35rem);
+		line-height: 1.04;
+		font-weight: 320;
+		letter-spacing: -0.03em;
+		max-width: 12ch;
+		text-wrap: balance;
+	}
+
+	.artist {
+		margin: 1.1rem 0 0;
+		font-size: 1.08rem;
+		font-weight: 520;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.68);
+	}
+
+	.waveform {
+		margin-top: 2rem;
+		width: 100%;
+		height: 52px;
+		display: grid;
+		grid-template-columns: repeat(120, minmax(0, 1fr));
+		align-items: end;
+		gap: 0;
+	}
+
+	.wave-bar {
+		display: block;
+		width: 1px;
+		justify-self: center;
+		height: calc(var(--bar-height) * 100%);
+		min-height: 5px;
+		background: rgba(255, 255, 255, 0.92);
+		opacity: 0.9;
+		transition: height 0.12s linear, opacity 0.18s ease;
+	}
+
+	.caption {
+		width: 100%;
+		margin: 0.38rem 0 0;
+		font-size: 0.74rem;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.32);
+	}
+
+	footer {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 1;
+		padding: 0 2.5rem 1.6rem;
+		text-align: center;
+	}
+
+	footer p {
+		margin: 0;
+		font-size: 0.68rem;
+		letter-spacing: 0.24em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.24);
+	}
+
+	.empty-state {
+		font-size: 0.88rem;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.42);
+	}
+
+	@media (max-width: 900px) {
+		header {
+			padding: 1.5rem 1.25rem;
+		}
+
+		main {
+			padding: 5.5rem 1.25rem 4rem;
+		}
+
+		.stage {
+			grid-template-columns: 1fr;
+			gap: 2rem;
+		}
+
+		.meta-column {
+			max-width: 360px;
+			height: auto;
+			min-height: 300px;
+		}
+
+		.meta-stack {
+			justify-content: center;
+		}
+
+		h1 {
+			max-width: 12ch;
+			font-size: clamp(1.55rem, 6vw, 2.1rem);
+		}
+
+		.waveform {
+			height: 46px;
+		}
+
+		footer {
+			padding: 0 1.25rem 1.25rem;
+		}
 	}
 </style>

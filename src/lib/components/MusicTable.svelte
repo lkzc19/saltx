@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Music } from '$lib/types/music';
-	import { getThumbnailUrl } from '$lib/utils/music';
 	import { formatDate } from '$lib/utils/date';
 
 	let {
@@ -27,7 +26,6 @@
 				<th class="px-4 py-3 font-medium">ID</th>
 				<th class="px-4 py-3 font-medium">名称</th>
 				<th class="px-4 py-3 font-medium">艺术家</th>
-				<th class="px-4 py-3 font-medium">版本</th>
 				<th class="px-4 py-3 font-medium">格式</th>
 				<th class="px-4 py-3 font-medium">创建时间</th>
 			</tr>
@@ -85,16 +83,13 @@
 					<td class="px-4 py-3 text-text">{item.name}</td>
 					<td class="px-4 py-3 text-text-muted">{item.artist}</td>
 					<td class="px-4 py-3">
-						<span class="rounded bg-bg-card px-2 py-0.5 text-xs text-text-muted">{item.version}</span>
-					</td>
-					<td class="px-4 py-3">
 						<span class="font-mono text-xs uppercase text-text-muted">{item.extension}</span>
 					</td>
 					<td class="px-4 py-3 text-xs text-text-disabled">{formatDate(item.created_at)}</td>
 				</tr>
 			{:else}
 				<tr>
-					<td colspan="8" class="px-4 py-12 text-center text-text-disabled">暂无数据</td>
+					<td colspan="7" class="px-4 py-12 text-center text-text-disabled">暂无数据</td>
 				</tr>
 			{/each}
 		</tbody>

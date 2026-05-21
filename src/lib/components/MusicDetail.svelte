@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Music, Image } from '$lib/types/music';
-	import { buildMusicFileKey } from '$lib/utils/music';
+	import { getMusicUrl } from '$lib/utils/music';
 	import { formatDate } from '$lib/utils/date';
 	import { adminState } from '$lib/stores/admin.svelte';
 	import ImagePickerModal from './ImagePickerModal.svelte';
@@ -25,10 +25,10 @@
 	let editArtist = $state('');
 	let editCoverFileKey = $state<string | null>(null);
 	let newFile = $state<File | null>(null);
-	let newVersion = $state('');
 	let fileInputEl = $state<HTMLInputElement | undefined>(undefined);
 
-	let fileKey = $derived(music ? buildMusicFileKey(music.id, music.version, music.extension) : '');
+	let fileKey = $derived(music ? music.file_key : '');
+	let fileUrl = $derived(music ? getMusicUrl(music.file_key) : '');
 
 	function startEdit() {
 		if (!music) return;
@@ -36,7 +36,6 @@
 		editArtist = music.artist;
 		editCoverFileKey = music.cover_file_key;
 		newFile = null;
-		newVersion = music.version;
 		error = '';
 		editing = true;
 	}
@@ -68,7 +67,6 @@
 			formData.set('cover_file_key', editCoverFileKey ?? '');
 			if (newFile) {
 				formData.set('file', newFile);
-				formData.set('version', newVersion);
 			}
 
 			const res = await fetch(`/api/admin/music?id=${music.id}`, { method: 'PUT', body: formData });
@@ -200,17 +198,6 @@
 						<p class="mb-2 text-xs font-medium text-text-muted">替换音乐源（可选）</p>
 						<div class="space-y-2">
 							<div>
-								<label for="detail-version" class="mb-1 block text-xs text-text-disabled">版本</label>
-								<input
-									id="detail-version"
-									type="text"
-									bind:value={newVersion}
-									placeholder={music.version}
-									disabled={!newFile}
-									class="h-8 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text outline-none transition-colors focus:border-primary disabled:opacity-50"
-								/>
-							</div>
-							<div>
 								<label for="detail-file" class="mb-1 block text-xs text-text-disabled">音频文件</label>
 								<label class="flex h-8 cursor-pointer items-center rounded-md border border-border bg-bg-primary px-3 text-sm transition-colors hover:border-text-disabled">
 									<span class={newFile ? 'text-text' : 'text-text-disabled'}>
@@ -224,7 +211,6 @@
 										class="hidden"
 										onchange={(e) => {
 											newFile = (e.target as HTMLInputElement).files?.[0] ?? null;
-											if (newFile && !newVersion) newVersion = music!.version;
 										}}
 									/>
 								</label>
@@ -300,19 +286,17 @@
 						<p class="mt-1 text-sm text-text">{music.artist}</p>
 					</div>
 					<div>
-						<span class="text-xs text-text-disabled">版本</span>
-						<p class="mt-1">
-							<span class="rounded bg-bg-primary px-2 py-0.5 text-xs text-text-muted">{music.version}</span>
-						</p>
-					</div>
-					<div>
 						<span class="text-xs text-text-disabled">格式</span>
 						<p class="mt-1 font-mono text-sm uppercase text-text-muted">{music.extension}</p>
 					</div>
-					<div>
-						<span class="text-xs text-text-disabled">文件路径</span>
-						<p class="mt-1 break-all font-mono text-xs text-primary">{fileKey}</p>
-					</div>
+						<div>
+							<span class="text-xs text-text-disabled">文件路径</span>
+							<p class="mt-1 break-all font-mono text-xs text-primary">{fileKey}</p>
+						</div>
+						<div>
+							<span class="text-xs text-text-disabled">访问地址</span>
+							<p class="mt-1 break-all font-mono text-xs text-text-muted">{fileUrl}</p>
+						</div>
 					<div>
 						<span class="text-xs text-text-disabled">创建时间</span>
 						<p class="mt-1 text-xs text-text-disabled">{formatDate(music.created_at)}</p>

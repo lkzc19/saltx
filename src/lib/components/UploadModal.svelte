@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ImagePickerModal from './ImagePickerModal.svelte';
-	import { getThumbnailUrl } from '$lib/utils/music';
+	import { getOriginalUrl } from '$lib/utils/music';
 	import type { Image } from '$lib/types/music';
 
 	let {
@@ -13,7 +13,6 @@
 
 	let name = $state('');
 	let artist = $state('');
-	let version = $state('');
 	let file = $state<File | null>(null);
 	let coverImage = $state<Image | null>(null);
 	let pickerOpen = $state(false);
@@ -24,7 +23,6 @@
 		if (open) {
 			name = '';
 			artist = '';
-			version = '';
 			file = null;
 			coverImage = null;
 			error = '';
@@ -37,7 +35,7 @@
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
-		if (!name.trim() || !artist.trim() || !version.trim() || !file || uploading) return;
+		if (!name.trim() || !artist.trim() || !file || uploading) return;
 		uploading = true;
 		error = '';
 
@@ -45,10 +43,9 @@
 			const formData = new FormData();
 			formData.set('name', name);
 			formData.set('artist', artist);
-			formData.set('version', version);
 			formData.set('file', file!);
 			if (coverImage) {
-				formData.set('cover_file_key', coverImage.file_key!);
+				formData.set('cover_file_key', coverImage.file_key);
 			}
 
 			const res = await fetch('/api/admin/music', { method: 'POST', body: formData });
@@ -100,7 +97,7 @@
 						{#if coverImage}
 							<div class="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border">
 								<img
-									src={getThumbnailUrl(coverImage.file_key!)}
+									src={getOriginalUrl(coverImage.file_key)}
 									alt={coverImage.name}
 									class="h-full w-full object-cover"
 								/>
@@ -153,19 +150,6 @@
 					/>
 				</div>
 
-				<!-- 版本 -->
-				<div>
-					<label for="upload-version" class="mb-1.5 block text-xs text-text-disabled">版本</label>
-					<input
-						id="upload-version"
-						type="text"
-						bind:value={version}
-						required
-						placeholder="original"
-						class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
-					/>
-				</div>
-
 				<!-- 文件 -->
 				<div>
 					<label for="upload-file" class="mb-1.5 block text-xs text-text-disabled">音频文件</label>
@@ -197,7 +181,7 @@
 					</button>
 					<button
 						type="submit"
-						disabled={uploading || !name.trim() || !artist.trim() || !version.trim() || !file}
+						disabled={uploading || !name.trim() || !artist.trim() || !file}
 						class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md bg-primary text-sm font-medium text-bg-primary transition-opacity hover:opacity-90 disabled:opacity-50"
 					>
 						{#if uploading}
