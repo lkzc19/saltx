@@ -9,13 +9,15 @@
 	import type { Music } from '$lib/types/music';
 	import { getMusicUrl, getOriginalUrl } from '$lib/utils/music';
 
-	type PlayerTrack = Music & { background_color?: string | null };
-	type AudioContextWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
+	type PlayerTrack = Music;
+	type AudioContextWindow = Window &
+		typeof globalThis & { webkitAudioContext?: typeof AudioContext };
 
 	const IDLE_TIMEOUT = 3000;
 	const DRAWER_CLOSE_DELAY = 1000;
 	const BAR_COUNT = 120;
 	const DEFAULT_BACKGROUND = '#243042';
+	const DEFAULT_BACKGROUND_RGB = '36, 48, 66';
 	const DEFAULT_BAR_HEIGHT = 0.08;
 
 	let tracks = $state<PlayerTrack[]>([]);
@@ -53,7 +55,7 @@
 
 	function hexToRgb(hex: string): string {
 		const normalized = hex.replace('#', '');
-		if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return '36, 48, 66';
+		if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return DEFAULT_BACKGROUND_RGB;
 		const red = parseInt(normalized.slice(0, 2), 16);
 		const green = parseInt(normalized.slice(2, 4), 16);
 		const blue = parseInt(normalized.slice(4, 6), 16);
@@ -93,6 +95,10 @@
 		window.history.replaceState(window.history.state, '', url);
 	}
 
+	function clearDrawerCloseTimer() {
+		if (drawerCloseTimer) clearTimeout(drawerCloseTimer);
+	}
+
 	function resetIdleTimer() {
 		if (!mediaQuery?.matches) return;
 		idleChromeHidden = false;
@@ -103,13 +109,13 @@
 	}
 
 	function openDrawer() {
-		if (drawerCloseTimer) clearTimeout(drawerCloseTimer);
+		clearDrawerCloseTimer();
 		drawerOpen = true;
 	}
 
 	function closeDrawer() {
 		if (drawerPinned) return;
-		if (drawerCloseTimer) clearTimeout(drawerCloseTimer);
+		clearDrawerCloseTimer();
 		drawerCloseTimer = setTimeout(() => {
 			drawerOpen = false;
 		}, DRAWER_CLOSE_DELAY);
@@ -119,7 +125,7 @@
 		if (drawerOpen) {
 			drawerOpen = false;
 			drawerPinned = false;
-			if (drawerCloseTimer) clearTimeout(drawerCloseTimer);
+			clearDrawerCloseTimer();
 			return;
 		}
 
@@ -133,7 +139,7 @@
 			return;
 		}
 
-		if (drawerCloseTimer) clearTimeout(drawerCloseTimer);
+		clearDrawerCloseTimer();
 	}
 
 	function setupIdleChrome() {
@@ -215,12 +221,16 @@
 
 		const tick = () => {
 			if (analyser && frequencyData && playing) {
-				analyser.getByteFrequencyData(frequencyData);
+				const data = frequencyData;
+				analyser.getByteFrequencyData(data);
 				const nextHeights = Array.from({ length: BAR_COUNT }, (_, index) => {
-					const start = Math.floor((index / BAR_COUNT) * frequencyData!.length * 0.82);
-					const end = Math.max(start + 1, Math.floor(((index + 1) / BAR_COUNT) * frequencyData!.length * 0.82));
+					const start = Math.floor((index / BAR_COUNT) * data.length * 0.82);
+					const end = Math.max(
+						start + 1,
+						Math.floor(((index + 1) / BAR_COUNT) * data.length * 0.82)
+					);
 					let sum = 0;
-					for (let cursor = start; cursor < end; cursor += 1) sum += frequencyData![cursor];
+					for (let cursor = start; cursor < end; cursor += 1) sum += data[cursor];
 					const average = sum / (end - start);
 					const normalized = Math.pow(average / 255, 1.2);
 					return Math.min(0.26, Math.max(DEFAULT_BAR_HEIGHT, normalized * 0.22));
@@ -242,6 +252,18 @@
 		return (index + tracks.length) % tracks.length;
 	}
 
+	async function playAudio() {
+		if (!audioEl) return;
+
+		await ensureAudioGraph();
+		try {
+			await audioEl.play();
+			playing = true;
+		} catch {
+			playing = false;
+		}
+	}
+
 	async function loadTrack(index: number, autoplay = false) {
 		if (!audioEl || tracks.length === 0) return;
 
@@ -259,13 +281,7 @@
 			return;
 		}
 
-		await ensureAudioGraph();
-		try {
-			await audioEl.play();
-			playing = true;
-		} catch {
-			playing = false;
-		}
+		await playAudio();
 		resetIdleTimer();
 	}
 
@@ -284,13 +300,7 @@
 			return;
 		}
 
-		await ensureAudioGraph();
-		try {
-			await audioEl.play();
-			playing = true;
-		} catch {
-			playing = false;
-		}
+		await playAudio();
 	}
 
 	async function playPrevious() {
@@ -357,7 +367,11 @@
 	<title>{currentTrack ? `${currentTrack.name} — SALT X` : 'SALT X'}</title>
 </svelte:head>
 
-<svelte:window onmousemove={resetIdleTimer} onmousedown={resetIdleTimer} ontouchstart={resetIdleTimer} />
+<svelte:window
+	onmousemove={resetIdleTimer}
+	onmousedown={resetIdleTimer}
+	ontouchstart={resetIdleTimer}
+/>
 
 <audio
 	bind:this={audioEl}
@@ -368,10 +382,7 @@
 	onpause={() => (playing = false)}
 ></audio>
 
-<div
-	class="player-page"
-	style={`--accent-color:${backgroundHex}; --accent-rgb:${backgroundRgb};`}
->
+<div class="player-page" style={`--accent-color:${backgroundHex}; --accent-rgb:${backgroundRgb};`}>
 	<div
 		class="drawer-edge-trigger"
 		aria-hidden="true"
@@ -379,7 +390,13 @@
 		onmouseleave={closeDrawer}
 	></div>
 
-	<button type="button" class="drawer-toggle" onclick={toggleDrawer} aria-expanded={drawerOpen} aria-controls="track-drawer">
+	<button
+		type="button"
+		class="drawer-toggle"
+		onclick={toggleDrawer}
+		aria-expanded={drawerOpen}
+		aria-controls="track-drawer"
+	>
 		Tracks
 	</button>
 
@@ -388,13 +405,13 @@
 		class="track-drawer"
 		class:open={drawerOpen}
 		onmouseenter={openDrawer}
-			onmouseleave={closeDrawer}
-		>
-			<div class="drawer-header">
-				<div class="drawer-heading">
-					<p>歌曲列表</p>
-					<span>{tracks.length} 首歌曲</span>
-				</div>
+		onmouseleave={closeDrawer}
+	>
+		<div class="drawer-header">
+			<div class="drawer-heading">
+				<p>歌曲列表</p>
+				<span>{tracks.length} 首歌曲</span>
+			</div>
 
 			<button
 				type="button"
@@ -412,7 +429,6 @@
 				{/if}
 			</button>
 		</div>
-
 		<div class="drawer-list" role="list">
 			{#if loading}
 				<p class="drawer-state">正在装载歌曲...</p>
@@ -440,9 +456,6 @@
 		</div>
 	</aside>
 
-	<div class="background-layer"></div>
-	<div class="background-glow"></div>
-
 	<header class:hidden={idleChromeHidden}>
 		<div class="logo">saltx</div>
 	</header>
@@ -457,7 +470,11 @@
 				<div class="cover-column">
 					<div class="cover-shell">
 						{#if currentTrack.cover_file_key}
-							<img class="cover" src={getOriginalUrl(currentTrack.cover_file_key)} alt={currentTrack.name} />
+							<img
+								class="cover"
+								src={getOriginalUrl(currentTrack.cover_file_key)}
+								alt={currentTrack.name}
+							/>
 						{:else}
 							<div class="cover placeholder">SALT X</div>
 						{/if}
@@ -485,7 +502,12 @@
 							<button type="button" onclick={playPrevious} aria-label="上一首">
 								<ChevronDoubleLeftIcon height="1em" />
 							</button>
-							<button type="button" class="play-toggle" onclick={togglePlay} aria-label={playing ? '暂停' : '播放'}>
+							<button
+								type="button"
+								class="play-toggle"
+								onclick={togglePlay}
+								aria-label={playing ? '暂停' : '播放'}
+							>
 								{#if playing}
 									<PauseIcon height="1em" />
 								{:else}
@@ -578,7 +600,9 @@
 		transform: translateX(calc(100% + 8px));
 		opacity: 0;
 		pointer-events: none;
-		transition: transform 0.24s ease, opacity 0.24s ease;
+		transition:
+			transform 0.24s ease,
+			opacity 0.24s ease;
 	}
 
 	.track-drawer.open {
@@ -634,7 +658,11 @@
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+		transition:
+			background 0.2s ease,
+			color 0.2s ease,
+			border-color 0.2s ease,
+			transform 0.2s ease;
 	}
 
 	.drawer-pin:hover {
@@ -675,7 +703,10 @@
 		gap: 0.9rem;
 		text-align: left;
 		cursor: pointer;
-		transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+		transition:
+			background 0.2s ease,
+			transform 0.2s ease,
+			border-color 0.2s ease;
 	}
 
 	.track-item:hover {
@@ -721,21 +752,6 @@
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: rgba(255, 255, 255, 0.52);
-	}
-
-	.background-layer,
-	.background-glow {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-	}
-
-	.background-layer {
-		display: none;
-	}
-
-	.background-glow {
-		display: none;
 	}
 
 	header,
@@ -855,7 +871,13 @@
 	.progress::-webkit-slider-runnable-track {
 		height: 2px;
 		border-radius: 999px;
-		background: linear-gradient(to right, #000 0, #000 var(--progress), #fff var(--progress), #fff 100%);
+		background: linear-gradient(
+			to right,
+			#000 0,
+			#000 var(--progress),
+			#fff var(--progress),
+			#fff 100%
+		);
 	}
 
 	.progress::-webkit-slider-thumb {
@@ -908,7 +930,10 @@
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		transition: color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+		transition:
+			color 0.2s ease,
+			transform 0.2s ease,
+			background 0.2s ease;
 	}
 
 	.transport button:hover {
@@ -990,7 +1015,9 @@
 		min-height: 5px;
 		background: rgba(255, 255, 255, 0.92);
 		opacity: 0.9;
-		transition: height 0.12s linear, opacity 0.18s ease;
+		transition:
+			height 0.12s linear,
+			opacity 0.18s ease;
 	}
 
 	.caption {
