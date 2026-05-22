@@ -1,5 +1,9 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
+	import ChevronDoubleLeftIcon from '@iconify-svelte/line-md/chevron-double-left';
+	import ChevronDoubleRightIcon from '@iconify-svelte/line-md/chevron-double-right';
+	import PauseIcon from '@iconify-svelte/line-md/pause';
+	import PlayIcon from '@iconify-svelte/line-md/play';
 	import type { Music } from '$lib/types/music';
 	import { getMusicUrl, getOriginalUrl } from '$lib/utils/music';
 
@@ -331,26 +335,17 @@
 
 						<div class="transport">
 							<button type="button" onclick={playPrevious} aria-label="上一首">
-								<svg viewBox="0 0 24 24" fill="currentColor">
-									<path d="M6 5h2v14H6zm3 7l9 6V6z" />
-								</svg>
+								<ChevronDoubleLeftIcon height="1em" />
 							</button>
 							<button type="button" class="play-toggle" onclick={togglePlay} aria-label={playing ? '暂停' : '播放'}>
 								{#if playing}
-									<svg viewBox="0 0 24 24" fill="currentColor">
-										<rect x="6" y="5" width="4" height="14" rx="1" />
-										<rect x="14" y="5" width="4" height="14" rx="1" />
-									</svg>
+									<PauseIcon height="1em" />
 								{:else}
-									<svg viewBox="0 0 24 24" fill="currentColor">
-										<path d="M8 5v14l11-7z" />
-									</svg>
+									<PlayIcon height="1em" />
 								{/if}
 							</button>
 							<button type="button" onclick={playNext} aria-label="下一首">
-								<svg viewBox="0 0 24 24" fill="currentColor">
-									<path d="M18 5h-2v14h2zm-3 7L6 6v12z" />
-								</svg>
+								<ChevronDoubleRightIcon height="1em" />
 							</button>
 						</div>
 					</div>
@@ -508,33 +503,53 @@
 
 	.progress {
 		width: 100%;
-		height: 8px;
+		height: 14px;
+		margin: 0;
+		padding: 0;
 		appearance: none;
 		-webkit-appearance: none;
-		border: 1px solid rgba(255, 255, 255, 0.42);
-		background: linear-gradient(
-			to right,
-			#ffffff var(--progress),
-			rgba(255, 255, 255, 0.08) var(--progress)
-		);
+		background: transparent;
+		border: 0;
 		cursor: pointer;
 		outline: none;
 	}
 
+	.progress::-webkit-slider-runnable-track {
+		height: 2px;
+		border-radius: 999px;
+		background: linear-gradient(to right, #000 0, #000 var(--progress), #fff var(--progress), #fff 100%);
+	}
+
 	.progress::-webkit-slider-thumb {
 		-webkit-appearance: none;
-		width: 6px;
-		height: 16px;
-		background: #fff;
-		border: 1px solid rgba(0, 0, 0, 0.35);
+		width: 10px;
+		height: 10px;
+		margin-top: -4px;
+		border-radius: 50%;
+		background: #8a8a8a;
+		border: 0;
 		box-shadow: none;
 	}
 
-	.progress::-moz-range-thumb {
-		width: 6px;
-		height: 16px;
+	.progress::-moz-range-track {
+		height: 2px;
+		border: 0;
+		border-radius: 999px;
 		background: #fff;
-		border: 1px solid rgba(0, 0, 0, 0.35);
+	}
+
+	.progress::-moz-range-progress {
+		height: 2px;
+		border-radius: 999px;
+		background: #000;
+	}
+
+	.progress::-moz-range-thumb {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		background: #8a8a8a;
+		border: 0;
 		box-shadow: none;
 	}
 
@@ -550,7 +565,7 @@
 		height: 42px;
 		border: 0;
 		background: transparent;
-		color: rgba(255, 255, 255, 0.52);
+		color: #fff;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -563,7 +578,7 @@
 		transform: translateY(-1px);
 	}
 
-	.transport svg {
+	.transport :global(svg) {
 		width: 18px;
 		height: 18px;
 	}
@@ -571,15 +586,10 @@
 	.play-toggle {
 		width: 54px !important;
 		height: 54px !important;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.08) !important;
 		color: #fff !important;
-		box-shadow:
-			0 0 0 1px rgba(255, 255, 255, 0.08),
-			0 14px 40px rgba(0, 0, 0, 0.28);
 	}
 
-	.play-toggle svg {
+	.play-toggle :global(svg) {
 		width: 22px;
 		height: 22px;
 	}
