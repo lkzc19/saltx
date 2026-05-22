@@ -47,8 +47,8 @@
 	const backgroundRgb = $derived(hexToRgb(backgroundHex));
 	const captionText = $derived(
 		tracks.length > 0
-			? `ALL TRACKS PLAY IN ORDER · ${String(currentIndex + 1).padStart(2, '0')} / ${String(tracks.length).padStart(2, '0')}`
-			: 'SALT X LISTENING ROOM'
+			? `歌曲按顺序播放 · ${String(currentIndex + 1).padStart(2, '0')} / ${String(tracks.length).padStart(2, '0')}`
+			: 'SALT X 勾栏听曲'
 	);
 
 	function hexToRgb(hex: string): string {
@@ -388,13 +388,13 @@
 		class="track-drawer"
 		class:open={drawerOpen}
 		onmouseenter={openDrawer}
-		onmouseleave={closeDrawer}
-	>
-		<div class="drawer-header">
-			<div class="drawer-heading">
-				<p>Track List</p>
-				<span>{tracks.length} Songs</span>
-			</div>
+			onmouseleave={closeDrawer}
+		>
+			<div class="drawer-header">
+				<div class="drawer-heading">
+					<p>歌曲列表</p>
+					<span>{tracks.length} 首歌曲</span>
+				</div>
 
 			<button
 				type="button"
@@ -518,7 +518,7 @@
 	</main>
 
 	<footer class:hidden={idleChromeHidden}>
-		<p>SALT X listening room</p>
+		<p>SALT X 勾栏听曲</p>
 	</footer>
 </div>
 
