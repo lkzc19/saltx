@@ -4,6 +4,8 @@
 	import ChevronDoubleRightIcon from '@iconify-svelte/line-md/chevron-double-right';
 	import PauseIcon from '@iconify-svelte/line-md/pause';
 	import PlayIcon from '@iconify-svelte/line-md/play';
+	import SwitchIcon from '@iconify-svelte/line-md/switch';
+	import SwitchOffIcon from '@iconify-svelte/line-md/switch-off';
 	import type { Music } from '$lib/types/music';
 	import { getMusicUrl, getOriginalUrl } from '$lib/utils/music';
 
@@ -11,6 +13,7 @@
 	type AudioContextWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
 
 	const IDLE_TIMEOUT = 3000;
+	const DRAWER_CLOSE_DELAY = 1000;
 	const BAR_COUNT = 120;
 	const DEFAULT_BACKGROUND = '#243042';
 	const DEFAULT_BAR_HEIGHT = 0.08;
@@ -23,10 +26,15 @@
 	let duration = $state(0);
 	let playing = $state(false);
 	let idleChromeHidden = $state(false);
+	let drawerOpen = $state(false);
+	let drawerPinned = $state(false);
+	let urlSyncReady = $state(false);
 	let audioEl = $state<HTMLAudioElement | null>(null);
 	let waveHeights = $state<number[]>(Array.from({ length: BAR_COUNT }, () => DEFAULT_BAR_HEIGHT));
 
 	let idleTimer: ReturnType<typeof setTimeout> | undefined;
+	let drawerCloseTimer: ReturnType<typeof setTimeout> | undefined;
+	let initialTrackIdFromUrl: string | null = null;
 	let animationFrame = 0;
 	let audioContext: AudioContext | null = null;
 	let analyser: AnalyserNode | null = null;
@@ -59,6 +67,32 @@
 		return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 	}
 
+	function getRequestedTrackId(): string | null {
+		if (typeof window === 'undefined') return null;
+		return window.location.search ? new URLSearchParams(window.location.search).get('id') : null;
+	}
+
+	function getTrackIndexById(trackId: string | null, items: PlayerTrack[]): number {
+		if (!trackId) return 0;
+		const index = items.findIndex((item) => item.id === trackId);
+		return index >= 0 ? index : 0;
+	}
+
+	function syncTrackIdToUrl(trackId: string | null) {
+		if (typeof window === 'undefined') return;
+
+		const url = new URL(window.location.href);
+		if (trackId) {
+			if (url.searchParams.get('id') === trackId) return;
+			url.searchParams.set('id', trackId);
+		} else {
+			if (!url.searchParams.has('id')) return;
+			url.searchParams.delete('id');
+		}
+
+		window.history.replaceState(window.history.state, '', url);
+	}
+
 	function resetIdleTimer() {
 		if (!mediaQuery?.matches) return;
 		idleChromeHidden = false;
@@ -66,6 +100,40 @@
 		idleTimer = setTimeout(() => {
 			idleChromeHidden = true;
 		}, IDLE_TIMEOUT);
+	}
+
+	function openDrawer() {
+		if (drawerCloseTimer) clearTimeout(drawerCloseTimer);
+		drawerOpen = true;
+	}
+
+	function closeDrawer() {
+		if (drawerPinned) return;
+		if (drawerCloseTimer) clearTimeout(drawerCloseTimer);
+		drawerCloseTimer = setTimeout(() => {
+			drawerOpen = false;
+		}, DRAWER_CLOSE_DELAY);
+	}
+
+	function toggleDrawer() {
+		if (drawerOpen) {
+			drawerOpen = false;
+			drawerPinned = false;
+			if (drawerCloseTimer) clearTimeout(drawerCloseTimer);
+			return;
+		}
+
+		openDrawer();
+	}
+
+	function toggleDrawerPinned() {
+		drawerPinned = !drawerPinned;
+		if (drawerPinned) {
+			openDrawer();
+			return;
+		}
+
+		if (drawerCloseTimer) clearTimeout(drawerCloseTimer);
 	}
 
 	function setupIdleChrome() {
@@ -91,12 +159,13 @@
 			if (!res.ok) throw new Error('获取音乐列表失败');
 			const data = (await res.json()) as { items: PlayerTrack[] };
 			tracks = data.items;
-			currentIndex = 0;
+			currentIndex = getTrackIndexById(initialTrackIdFromUrl, data.items);
 			if (data.items.length === 0) error = '暂无可播放的音乐';
 		} catch (err) {
 			error = (err as Error).message;
 		} finally {
 			loading = false;
+			urlSyncReady = true;
 		}
 	}
 
@@ -232,6 +301,10 @@
 		await loadTrack(currentIndex + 1, playing);
 	}
 
+	async function selectTrack(index: number) {
+		await loadTrack(index, true);
+	}
+
 	function handleTimeUpdate() {
 		if (audioEl) currentTime = audioEl.currentTime;
 	}
@@ -253,6 +326,7 @@
 	}
 
 	onMount(() => {
+		initialTrackIdFromUrl = getRequestedTrackId();
 		void fetchTracks();
 		const cleanupIdle = setupIdleChrome();
 
@@ -267,8 +341,14 @@
 		}
 	});
 
+	$effect(() => {
+		if (!urlSyncReady) return;
+		syncTrackIdToUrl(currentTrack?.id ?? null);
+	});
+
 	onDestroy(() => {
 		if (idleTimer) clearTimeout(idleTimer);
+		if (drawerCloseTimer) clearTimeout(drawerCloseTimer);
 		destroyAudioGraph();
 	});
 </script>
@@ -292,6 +372,74 @@
 	class="player-page"
 	style={`--accent-color:${backgroundHex}; --accent-rgb:${backgroundRgb};`}
 >
+	<div
+		class="drawer-edge-trigger"
+		aria-hidden="true"
+		onmouseenter={openDrawer}
+		onmouseleave={closeDrawer}
+	></div>
+
+	<button type="button" class="drawer-toggle" onclick={toggleDrawer} aria-expanded={drawerOpen} aria-controls="track-drawer">
+		Tracks
+	</button>
+
+	<aside
+		id="track-drawer"
+		class="track-drawer"
+		class:open={drawerOpen}
+		onmouseenter={openDrawer}
+		onmouseleave={closeDrawer}
+	>
+		<div class="drawer-header">
+			<div class="drawer-heading">
+				<p>Track List</p>
+				<span>{tracks.length} Songs</span>
+			</div>
+
+			<button
+				type="button"
+				class="drawer-pin"
+				class:active={drawerPinned}
+				onclick={toggleDrawerPinned}
+				aria-pressed={drawerPinned}
+				aria-label={drawerPinned ? '解除固定抽屉' : '固定抽屉'}
+				title={drawerPinned ? '解除固定' : '固定抽屉'}
+			>
+				{#if drawerPinned}
+					<SwitchIcon height="1em" />
+				{:else}
+					<SwitchOffIcon height="1em" />
+				{/if}
+			</button>
+		</div>
+
+		<div class="drawer-list" role="list">
+			{#if loading}
+				<p class="drawer-state">正在装载歌曲...</p>
+			{:else if error}
+				<p class="drawer-state">{error}</p>
+			{:else if tracks.length === 0}
+				<p class="drawer-state">暂无歌曲</p>
+			{:else}
+				{#each tracks as track, index (track.id)}
+					<button
+						type="button"
+						class="track-item"
+						class:active={index === currentIndex}
+						aria-current={index === currentIndex ? 'true' : undefined}
+						onclick={() => selectTrack(index)}
+					>
+						<span class="track-order">{String(index + 1).padStart(2, '0')}</span>
+						<span class="track-copy">
+							<strong>{track.name}</strong>
+							<small>{track.artist}</small>
+						</span>
+					</button>
+				{/each}
+			{/if}
+		</div>
+	</aside>
+
 	<div class="background-layer"></div>
 	<div class="background-glow"></div>
 
@@ -383,6 +531,196 @@
 		overflow: hidden;
 		background: var(--accent-color);
 		color: rgba(255, 255, 255, 0.94);
+	}
+
+	.drawer-edge-trigger {
+		position: fixed;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: 44px;
+		z-index: 4;
+	}
+
+	.drawer-toggle,
+	.track-drawer {
+		position: fixed;
+		right: 0;
+		z-index: 5;
+	}
+
+	.drawer-toggle {
+		top: 1.25rem;
+		border: 0;
+		padding: 0.68rem 0.9rem;
+		background: rgba(8, 12, 18, 0.52);
+		color: rgba(255, 255, 255, 0.9);
+		font-size: 0.72rem;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		backdrop-filter: blur(18px);
+		display: none;
+	}
+
+	.track-drawer {
+		top: 0;
+		bottom: 0;
+		width: min(340px, calc(100vw - 1.5rem));
+		padding: 1.2rem 1rem 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+			rgba(8, 12, 18, 0.68);
+		border-left: 1px solid rgba(255, 255, 255, 0.08);
+		backdrop-filter: blur(24px);
+		transform: translateX(calc(100% + 8px));
+		opacity: 0;
+		pointer-events: none;
+		transition: transform 0.24s ease, opacity 0.24s ease;
+	}
+
+	.track-drawer.open {
+		transform: translateX(0);
+		opacity: 1;
+		pointer-events: auto;
+	}
+
+	.drawer-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-bottom: 0.8rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	}
+
+	.drawer-heading {
+		display: flex;
+		flex-direction: column;
+		gap: 0.32rem;
+	}
+
+	.drawer-header p,
+	.drawer-header span,
+	.drawer-state {
+		margin: 0;
+	}
+
+	.drawer-header p {
+		font-size: 0.82rem;
+		letter-spacing: 0.26em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.82);
+	}
+
+	.drawer-header span,
+	.drawer-state {
+		font-size: 0.68rem;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.46);
+	}
+
+	.drawer-pin {
+		flex: 0 0 auto;
+		width: 36px;
+		height: 36px;
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		background: rgba(255, 255, 255, 0.04);
+		color: rgba(255, 255, 255, 0.62);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+	}
+
+	.drawer-pin:hover {
+		background: rgba(255, 255, 255, 0.08);
+		color: rgba(255, 255, 255, 0.9);
+		transform: translateY(-1px);
+	}
+
+	.drawer-pin.active {
+		background: rgba(var(--accent-rgb), 0.34);
+		border-color: rgba(255, 255, 255, 0.14);
+		color: rgba(255, 255, 255, 0.96);
+	}
+
+	.drawer-pin :global(svg) {
+		width: 16px;
+		height: 16px;
+	}
+
+	.drawer-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+		min-height: 0;
+		overflow-y: auto;
+		padding-right: 0.1rem;
+	}
+
+	.track-item {
+		width: 100%;
+		border: 0;
+		padding: 0.9rem 0.85rem;
+		background: rgba(255, 255, 255, 0.03);
+		color: inherit;
+		display: grid;
+		grid-template-columns: auto 1fr;
+		align-items: center;
+		gap: 0.9rem;
+		text-align: left;
+		cursor: pointer;
+		transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+	}
+
+	.track-item:hover {
+		background: rgba(255, 255, 255, 0.08);
+		transform: translateX(-2px);
+	}
+
+	.track-item.active {
+		background: rgba(var(--accent-rgb), 0.34);
+		outline: 1px solid rgba(255, 255, 255, 0.12);
+	}
+
+	.track-order {
+		font-size: 0.72rem;
+		letter-spacing: 0.18em;
+		color: rgba(255, 255, 255, 0.44);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.track-copy {
+		display: flex;
+		flex-direction: column;
+		gap: 0.18rem;
+		min-width: 0;
+	}
+
+	.track-copy strong,
+	.track-copy small {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.track-copy strong {
+		font-size: 0.94rem;
+		font-weight: 520;
+		color: rgba(255, 255, 255, 0.94);
+	}
+
+	.track-copy small {
+		font-size: 0.74rem;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.52);
 	}
 
 	.background-layer,
@@ -690,6 +1028,31 @@
 	}
 
 	@media (max-width: 900px) {
+		.drawer-edge-trigger {
+			display: none;
+		}
+
+		.drawer-toggle {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.track-drawer {
+			top: auto;
+			left: 0;
+			width: 100%;
+			max-height: min(62vh, 520px);
+			padding: 1rem 1rem 1.1rem;
+			border-left: 0;
+			border-top: 1px solid rgba(255, 255, 255, 0.08);
+			transform: translateY(calc(100% + 8px));
+		}
+
+		.track-drawer.open {
+			transform: translateY(0);
+		}
+
 		header {
 			padding: 1.5rem 1.25rem;
 		}
