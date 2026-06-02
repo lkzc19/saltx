@@ -28,30 +28,10 @@
 </script>
 
 <aside
-	class="fixed top-0 left-0 z-40 flex h-screen flex-col border-r border-border bg-bg-card transition-all duration-200"
+	class="flex h-full flex-col border-r border-border bg-bg-card transition-all duration-200"
 	class:w-16={collapsed}
 	class:w-56={!collapsed}
 >
-	<!-- 顶部 Logo / 折叠按钮 -->
-	<div class="flex h-14 items-center justify-between border-b border-border px-4">
-		{#if !collapsed}
-			<span class="text-sm font-semibold text-primary">SALT X</span>
-		{/if}
-		<button
-			onclick={() => (collapsed = !collapsed)}
-			class="flex h-8 w-8 items-center justify-center rounded text-text-muted transition-colors hover:bg-border hover:text-text"
-			aria-label="切换侧边栏"
-		>
-			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				{#if collapsed}
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-				{:else}
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
-				{/if}
-			</svg>
-		</button>
-	</div>
-
 	<!-- 导航 -->
 	<nav class="flex-1 overflow-y-auto py-3">
 		{#each navItems as item (item.href)}
