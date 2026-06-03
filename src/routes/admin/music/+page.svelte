@@ -3,11 +3,11 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
-	import SearchBar from '$lib/components/SearchBar.svelte';
-	import MusicTable from '$lib/components/MusicTable.svelte';
-	import MusicDetail from '$lib/components/MusicDetail.svelte';
+	import SearchBar from './_components/SearchBar.svelte';
+	import MusicTable from './_components/MusicTable.svelte';
+	import MusicDetail from './_components/MusicDetail.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
-	import UploadModal from '$lib/components/UploadModal.svelte';
+	import UploadModal from './_components/UploadModal.svelte';
 	import { adminState, playerState } from '$lib/stores/admin.svelte';
 	import type { Music } from '$lib/types/music';
 

@@ -5,11 +5,6 @@ import { buildMusicFileKey } from '$lib/utils/music';
 import { eq } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
-function getExtension(filename: string): string {
-	const dot = filename.lastIndexOf('.');
-	return dot === -1 ? '' : filename.slice(dot + 1);
-}
-
 export const POST: RequestHandler = async ({ request, platform }) => {
 	const formData = await request.formData();
 
@@ -30,8 +25,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	}
 
 	const id = nanoid8();
-	const ext = getExtension(file.name);
-	const fileKey = buildMusicFileKey(id, ext);
+	const fileKey = buildMusicFileKey(id, file.name);
 
 	const bucket = platform!.env.BUCKET;
 	const db = getDb(platform!.env.DB);
@@ -46,7 +40,6 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			id,
 			name,
 			artist,
-			extension: ext,
 			file_key: fileKey,
 			cover_file_key: coverFileKey
 		})
@@ -77,20 +70,18 @@ export const PUT: RequestHandler = async ({ url, request, platform }) => {
 	if (coverFileKey !== undefined) updates.cover_file_key = coverFileKey || null;
 
 	if (newFile) {
-		const newExt = getExtension(newFile.name);
 		const oldKey = existing.file_key;
-		const newKey = buildMusicFileKey(existing.id, newExt);
+		const newKey = buildMusicFileKey(existing.id, newFile.name);
 
 		const bucket = platform!.env.BUCKET;
 		await bucket.put(newKey, await newFile.arrayBuffer(), {
 			httpMetadata: { contentType: newFile.type }
 		});
-			if (oldKey !== newKey) {
-				await bucket.delete(oldKey);
-			}
-			updates.extension = newExt;
-			updates.file_key = newKey;
+		if (oldKey !== newKey) {
+			await bucket.delete(oldKey);
 		}
+		updates.file_key = newKey;
+	}
 
 	updates.updated_at = new Date().toISOString();
 

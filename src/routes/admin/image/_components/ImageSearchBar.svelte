@@ -30,12 +30,12 @@
 			type="text"
 			bind:value={name}
 			placeholder="搜索图片名称"
-			class="h-9 w-full rounded-md border border-border bg-bg-card pl-9 pr-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
+			class="h-9 w-full rounded-md border border-border-primary bg-fg pl-9 pr-3 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
 		/>
 	</div>
 	<button
 		type="submit"
-		class="h-9 rounded-md border border-border bg-bg-card px-4 text-sm text-text-muted transition-colors hover:border-primary hover:text-primary"
+		class="h-9 rounded-md border border-border-primary bg-fg px-4 text-sm text-text-primary transition-colors hover:border-primary hover:text-primary"
 	>
 		搜索
 	</button>

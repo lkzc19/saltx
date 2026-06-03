@@ -13,7 +13,7 @@
 			<button
 				onclick={onclose}
 				aria-label="关闭"
-				class="absolute -top-10 right-0 flex h-8 w-8 items-center justify-center rounded text-text-muted transition-colors hover:text-text"
+				class="absolute -top-10 right-0 flex h-8 w-8 items-center justify-center rounded text-text-primary transition-colors hover:text-text-primary"
 			>
 				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -28,10 +28,10 @@
 
 			<div class="mt-4 flex items-center justify-between">
 				<div>
-					<p class="text-sm text-text">{image.name}</p>
-					<p class="text-xs text-text-muted">{image.extension.toUpperCase()} · {image.aspect_ratio}</p>
+					<p class="text-sm text-text-primary">{image.name}</p>
+					<p class="text-xs text-text-primary">{image.extension.toUpperCase()} · {image.aspect_ratio}</p>
 					{#if image.background_color}
-						<div class="mt-2 flex items-center gap-2 text-xs text-text-muted">
+						<div class="mt-2 flex items-center gap-2 text-xs text-text-primary">
 							<span
 								class="inline-block h-3 w-3 rounded-full border border-white/15"
 								style:background-color={image.background_color}

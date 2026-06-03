@@ -128,17 +128,17 @@
 	>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
-			class="w-full max-w-lg rounded-lg border border-border bg-bg-card p-6 shadow-2xl"
+			class="w-full max-w-lg rounded-lg border border-border-primary bg-fg p-6 shadow-2xl"
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.stopPropagation()}
 		>
 			<!-- Header -->
 			<div class="mb-5 flex items-center justify-between">
-				<h2 class="text-base font-semibold text-text">上传图片</h2>
+				<h2 class="text-base font-semibold text-text-primary">上传图片</h2>
 				<button
 					onclick={close}
 					aria-label="关闭"
-					class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text"
+					class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text-primary"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -149,7 +149,7 @@
 			{#if step === 'select'}
 				<!-- 选择文件 -->
 				<label
-					class="flex h-40 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-border bg-bg-primary transition-colors hover:border-text-disabled"
+					class="flex h-40 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-border-primary bg-bg-primary transition-colors hover:border-text-disabled"
 				>
 					<svg class="mb-2 h-10 w-10 text-text-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
@@ -209,7 +209,7 @@
 							type="text"
 							bind:value={name}
 							placeholder="图片名称"
-							class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
+							class="h-9 w-full rounded-md border border-border-primary bg-bg-primary px-3 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
 						/>
 					</div>
 
@@ -222,7 +222,7 @@
 						<button
 							type="button"
 							onclick={backToSelect}
-							class="h-9 rounded-md border border-border px-4 text-sm text-text-muted transition-colors hover:bg-border hover:text-text"
+							class="h-9 rounded-md border border-border-primary px-4 text-sm text-text-primary transition-colors hover:bg-border hover:text-text-primary"
 						>
 							重新选择
 						</button>

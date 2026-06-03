@@ -72,15 +72,15 @@
 	>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
-			class="w-full max-w-md rounded-lg border border-border bg-bg-card p-6 shadow-2xl"
+			class="w-full max-w-md rounded-lg border border-border-primary bg-fg p-6 shadow-2xl"
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.stopPropagation()}
 		>
 			<div class="mb-5 flex items-center justify-between">
-				<h2 class="text-base font-semibold text-text">新增音乐</h2>
+				<h2 class="text-base font-semibold text-text-primary">新增音乐</h2>
 				<button
 					onclick={close}
-					class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text"
+					class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text-primary"
 					aria-label="关闭"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +95,7 @@
 					<p class="mb-1.5 text-xs text-text-disabled">封面（可选）</p>
 					<div class="flex items-center gap-3">
 						{#if coverImage}
-							<div class="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border">
+							<div class="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border-primary">
 								<img
 									src={getOriginalUrl(coverImage.file_key)}
 									alt={coverImage.name}
@@ -103,7 +103,7 @@
 								/>
 							</div>
 							<div class="min-w-0 flex-1">
-								<p class="truncate text-xs text-text">{coverImage.name}</p>
+								<p class="truncate text-xs text-text-primary">{coverImage.name}</p>
 							</div>
 							<button
 								type="button"
@@ -116,7 +116,7 @@
 							<button
 								type="button"
 								onclick={() => (pickerOpen = true)}
-								class="h-12 rounded-md border border-border px-4 text-sm text-text-muted transition-colors hover:bg-border hover:text-text"
+								class="h-12 rounded-md border border-border-primary px-4 text-sm text-text-primary transition-colors hover:bg-border hover:text-text-primary"
 							>
 								选择封面
 							</button>
@@ -133,7 +133,7 @@
 						bind:value={name}
 						required
 						placeholder="请输入音乐名称"
-						class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
+						class="h-9 w-full rounded-md border border-border-primary bg-bg-primary px-3 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
 					/>
 				</div>
 
@@ -146,15 +146,15 @@
 						bind:value={artist}
 						required
 						placeholder="请输入艺术家名称"
-						class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
+						class="h-9 w-full rounded-md border border-border-primary bg-bg-primary px-3 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-colors focus:border-primary"
 					/>
 				</div>
 
 				<!-- 文件 -->
 				<div>
 					<label for="upload-file" class="mb-1.5 block text-xs text-text-disabled">音频文件</label>
-					<label class="flex h-9 cursor-pointer items-center rounded-md border border-border bg-bg-primary px-3 text-sm transition-colors hover:border-text-disabled">
-						<span class={file ? 'text-text' : 'text-text-disabled'}>
+					<label class="flex h-9 cursor-pointer items-center rounded-md border border-border-primary bg-bg-primary px-3 text-sm transition-colors hover:border-text-disabled">
+						<span class={file ? 'text-text-primary' : 'text-text-disabled'}>
 							{file ? file.name : '选择音频文件'}
 						</span>
 						<input
@@ -175,7 +175,7 @@
 					<button
 						type="button"
 						onclick={close}
-						class="h-9 flex-1 rounded-md border border-border text-sm text-text-muted transition-colors hover:bg-border hover:text-text"
+						class="h-9 flex-1 rounded-md border border-border-primary text-sm text-text-primary transition-colors hover:bg-border hover:text-text-primary"
 					>
 						取消
 					</button>

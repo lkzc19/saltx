@@ -17,25 +17,24 @@
 	} = $props();
 </script>
 
-<div class="flex-1 overflow-auto rounded-lg border border-border">
+<div class="flex-1 overflow-auto rounded-lg border border-border-primary">
 	<table class="w-full text-sm">
 		<thead>
-			<tr class="border-b border-border bg-bg-card text-left text-xs text-text-muted">
+			<tr class="border-b border-border-primary bg-fg text-left text-xs text-text-primary">
 				<th class="w-12 px-4 py-3 font-medium"></th>
 				<th class="w-10 px-2 py-3 font-medium"></th>
 				<th class="px-4 py-3 font-medium">ID</th>
 				<th class="px-4 py-3 font-medium">名称</th>
 				<th class="px-4 py-3 font-medium">艺术家</th>
-				<th class="px-4 py-3 font-medium">格式</th>
 				<th class="px-4 py-3 font-medium">创建时间</th>
 			</tr>
 		</thead>
 		<tbody>
 			{#each items as item (item.id)}
 				<tr
-					class="cursor-pointer border-b border-border transition-colors hover:bg-(--highlight-bg)"
+					class="cursor-pointer border-b border-border-primary transition-colors hover:bg-bg-primary-hover"
 					style={selectedId === item.id
-						? 'background: var(--highlight-bg); border-left: 2px solid var(--highlight-border)'
+						? 'background: var(--color-bg-primary-hover); border-left: 2px solid var(--color-border-primary)'
 						: ''}
 					tabindex="0"
 					onclick={() => onselect(item)}
@@ -47,7 +46,7 @@
 								e.stopPropagation();
 								onplay(item);
 							}}
-							class="flex h-7 w-7 items-center justify-center rounded-full text-text-muted transition-colors hover:text-primary"
+							class="flex h-7 w-7 items-center justify-center rounded-full text-text-primary transition-colors hover:text-primary"
 							class:text-primary={playingId === item.id}
 							aria-label="播放 {item.name}"
 						>
@@ -63,7 +62,7 @@
 						</button>
 					</td>
 					<td class="px-2 py-3">
-						<div class="h-8 w-8 overflow-hidden rounded border border-border bg-bg-card">
+						<div class="h-8 w-8 overflow-hidden rounded border border-border-primary bg-fg">
 							{#if item.cover_file_key}
 								<img
 									src={`/files/${item.cover_file_key}`}
@@ -79,17 +78,14 @@
 							{/if}
 						</div>
 					</td>
-					<td class="px-4 py-3 font-mono text-xs text-text-muted">{item.id}</td>
-					<td class="px-4 py-3 text-text">{item.name}</td>
-					<td class="px-4 py-3 text-text-muted">{item.artist}</td>
-					<td class="px-4 py-3">
-						<span class="font-mono text-xs uppercase text-text-muted">{item.extension}</span>
-					</td>
+					<td class="px-4 py-3 font-mono text-xs text-text-primary">{item.id}</td>
+					<td class="px-4 py-3 text-text-primary">{item.name}</td>
+					<td class="px-4 py-3 text-text-primary">{item.artist}</td>
 					<td class="px-4 py-3 text-xs text-text-disabled">{formatDate(item.created_at)}</td>
 				</tr>
 			{:else}
 				<tr>
-					<td colspan="7" class="px-4 py-12 text-center text-text-disabled">暂无数据</td>
+					<td colspan="6" class="px-4 py-12 text-center text-text-disabled">暂无数据</td>
 				</tr>
 			{/each}
 		</tbody>

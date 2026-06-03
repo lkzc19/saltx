@@ -3,11 +3,11 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
-	import ImageGrid from '$lib/components/ImageGrid.svelte';
-	import ImagePreview from '$lib/components/ImagePreview.svelte';
-	import ImageUploadModal from '$lib/components/ImageUploadModal.svelte';
+	import ImageGrid from './_components/ImageGrid.svelte';
+	import ImagePreview from './_components/ImagePreview.svelte';
+	import ImageUploadModal from './_components/ImageUploadModal.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
-	import ImageSearchBar from '$lib/components/ImageSearchBar.svelte';
+	import ImageSearchBar from './_components/ImageSearchBar.svelte';
 	import type { Image } from '$lib/types/music';
 
 	let { data } = $props();

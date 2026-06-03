@@ -15,7 +15,7 @@ export const playerState = writable({
 	currentTime: 0
 });
 
-// 音频控制回调，由 PlayerBar 注册
+// 音频控制回调，由 initPlayer 注册
 let _togglePlay: (() => void) | null = null;
 let _seek: ((time: number) => void) | null = null;
 

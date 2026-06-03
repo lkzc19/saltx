@@ -99,15 +99,15 @@
 </script>
 
 {#if music}
-	<aside class="flex w-80 shrink-0 flex-col border-l border-border bg-bg-card">
+	<aside class="flex w-80 shrink-0 flex-col border-l border-border-primary bg-fg">
 		<!-- Header -->
-		<div class="flex items-center justify-between border-b border-border px-5 py-4">
-			<h3 class="text-sm font-semibold text-text">音乐详情</h3>
+		<div class="flex items-center justify-between border-b border-border-primary px-5 py-4">
+			<h3 class="text-sm font-semibold text-text-primary">音乐详情</h3>
 			<div class="flex items-center gap-1">
 				{#if !editing}
 					<button
 						onclick={startEdit}
-						class="flex h-7 items-center gap-1 rounded px-2 text-xs text-text-muted transition-colors hover:bg-border hover:text-text"
+						class="flex h-7 items-center gap-1 rounded px-2 text-xs text-text-primary transition-colors hover:bg-border hover:text-text-primary"
 					>
 						<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -117,7 +117,7 @@
 				{/if}
 				<button
 					onclick={() => (adminState.selectedMusic = null)}
-					class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text"
+					class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text-primary"
 					aria-label="关闭"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +135,7 @@
 					<div>
 						<span class="text-xs text-text-disabled">封面</span>
 						<div class="mt-2 flex items-center gap-3">
-							<div class="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-border bg-bg-primary">
+							<div class="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-border-primary bg-bg-primary">
 								{#if editCoverFileKey}
 									<img
 										src={`/files/${editCoverFileKey}`}
@@ -154,7 +154,7 @@
 								<button
 									type="button"
 									onclick={() => (pickerOpen = true)}
-									class="h-7 rounded border border-border px-2.5 text-xs text-text-muted transition-colors hover:bg-border hover:text-text"
+									class="h-7 rounded border border-border-primary px-2.5 text-xs text-text-primary transition-colors hover:bg-border hover:text-text-primary"
 								>
 									{editCoverFileKey ? '更换封面' : '选择封面'}
 								</button>
@@ -162,7 +162,7 @@
 									<button
 										type="button"
 										onclick={clearCover}
-										class="h-7 rounded border border-border px-2.5 text-xs text-text-disabled transition-colors hover:text-error"
+										class="h-7 rounded border border-border-primary px-2.5 text-xs text-text-disabled transition-colors hover:text-error"
 									>
 										移除封面
 									</button>
@@ -178,7 +178,7 @@
 							id="detail-name"
 							type="text"
 							bind:value={editName}
-							class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text outline-none transition-colors focus:border-primary"
+							class="h-9 w-full rounded-md border border-border-primary bg-bg-primary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
 						/>
 					</div>
 
@@ -189,18 +189,18 @@
 							id="detail-artist"
 							type="text"
 							bind:value={editArtist}
-							class="h-9 w-full rounded-md border border-border bg-bg-primary px-3 text-sm text-text outline-none transition-colors focus:border-primary"
+							class="h-9 w-full rounded-md border border-border-primary bg-bg-primary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
 						/>
 					</div>
 
 					<!-- 替换音乐源 -->
-					<div class="rounded-md border border-border p-3">
-						<p class="mb-2 text-xs font-medium text-text-muted">替换音乐源（可选）</p>
+					<div class="rounded-md border border-border-primary p-3">
+						<p class="mb-2 text-xs font-medium text-text-primary">替换音乐源（可选）</p>
 						<div class="space-y-2">
 							<div>
 								<label for="detail-file" class="mb-1 block text-xs text-text-disabled">音频文件</label>
-								<label class="flex h-8 cursor-pointer items-center rounded-md border border-border bg-bg-primary px-3 text-sm transition-colors hover:border-text-disabled">
-									<span class={newFile ? 'text-text' : 'text-text-disabled'}>
+								<label class="flex h-8 cursor-pointer items-center rounded-md border border-border-primary bg-bg-primary px-3 text-sm transition-colors hover:border-text-disabled">
+									<span class={newFile ? 'text-text-primary' : 'text-text-disabled'}>
 										{newFile ? newFile.name : '选择音频文件'}
 									</span>
 									<input
@@ -226,7 +226,7 @@
 						<button
 							type="button"
 							onclick={cancelEdit}
-							class="h-8 flex-1 rounded-md border border-border text-sm text-text-muted transition-colors hover:bg-border hover:text-text"
+							class="h-8 flex-1 rounded-md border border-border-primary text-sm text-text-primary transition-colors hover:bg-border hover:text-text-primary"
 						>
 							取消
 						</button>
@@ -246,7 +246,7 @@
 						</button>
 					</div>
 
-					<div class="border-t border-border pt-3">
+					<div class="border-t border-border-primary pt-3">
 						<button
 							type="button"
 							onclick={handleDelete}
@@ -264,7 +264,7 @@
 				<div class="space-y-4">
 					<!-- 封面 -->
 					{#if music.cover_file_key}
-						<div class="mx-auto h-32 w-32 overflow-hidden rounded-lg border border-border">
+						<div class="mx-auto h-32 w-32 overflow-hidden rounded-lg border border-border-primary">
 							<img
 								src={`/files/${music.cover_file_key}`}
 								alt="封面"
@@ -275,19 +275,15 @@
 
 					<div>
 						<span class="text-xs text-text-disabled">ID</span>
-						<p class="mt-1 font-mono text-sm text-text">{music.id}</p>
+						<p class="mt-1 font-mono text-sm text-text-primary">{music.id}</p>
 					</div>
 					<div>
 						<span class="text-xs text-text-disabled">名称</span>
-						<p class="mt-1 text-sm text-text">{music.name}</p>
+						<p class="mt-1 text-sm text-text-primary">{music.name}</p>
 					</div>
 					<div>
 						<span class="text-xs text-text-disabled">艺术家</span>
-						<p class="mt-1 text-sm text-text">{music.artist}</p>
-					</div>
-					<div>
-						<span class="text-xs text-text-disabled">格式</span>
-						<p class="mt-1 font-mono text-sm uppercase text-text-muted">{music.extension}</p>
+						<p class="mt-1 text-sm text-text-primary">{music.artist}</p>
 					</div>
 						<div>
 							<span class="text-xs text-text-disabled">文件路径</span>
@@ -295,7 +291,7 @@
 						</div>
 						<div>
 							<span class="text-xs text-text-disabled">访问地址</span>
-							<p class="mt-1 break-all font-mono text-xs text-text-muted">{fileUrl}</p>
+							<p class="mt-1 break-all font-mono text-xs text-text-primary">{fileUrl}</p>
 						</div>
 					<div>
 						<span class="text-xs text-text-disabled">创建时间</span>
@@ -306,7 +302,7 @@
 						<p class="mt-1 text-xs text-text-disabled">{formatDate(music.updated_at)}</p>
 					</div>
 
-					<div class="border-t border-border pt-3">
+					<div class="border-t border-border-primary pt-3">
 						<button
 							type="button"
 							onclick={handleDelete}

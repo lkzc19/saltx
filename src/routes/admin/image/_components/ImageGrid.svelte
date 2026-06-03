@@ -11,7 +11,7 @@
 	} = $props();
 </script>
 
-<div class="flex-1 overflow-auto rounded-lg border border-border p-4">
+<div class="flex-1 overflow-auto rounded-lg border border-border-primary p-4">
 	{#if items.length === 0}
 		<div class="flex h-32 items-center justify-center text-text-disabled">暂无图片</div>
 	{:else}
@@ -19,7 +19,7 @@
 			{#each items as item (item.id)}
 				<button
 					type="button"
-					class="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-border transition-all hover:border-primary"
+					class="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-border-primary transition-all hover:border-primary"
 					onclick={() => onselect(item)}
 				>
 					<img

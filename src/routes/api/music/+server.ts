@@ -12,7 +12,6 @@ export const GET: RequestHandler = async ({ platform }) => {
 			id: music.id,
 			name: music.name,
 			artist: music.artist,
-			extension: music.extension,
 			file_key: music.file_key,
 			cover_file_key: music.cover_file_key,
 			background_color: image.background_color,

@@ -2,7 +2,6 @@ export interface Music {
 	id: string;
 	name: string;
 	artist: string;
-	extension: string;
 	file_key: string;
 	cover_file_key: string | null;
 	background_color?: string | null;

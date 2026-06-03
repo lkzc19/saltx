@@ -9,7 +9,6 @@ export const music = sqliteTable('music', {
 		.$defaultFn(() => nanoid8()),
 	name: text('name').notNull(),
 	artist: text('artist').notNull(),
-	extension: text('extension').notNull(),
 	file_key: text('file_key').notNull(),
 	cover_file_key: text('cover_file_key'),
 	created_at: text('created_at')
