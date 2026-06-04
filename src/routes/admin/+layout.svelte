@@ -2,21 +2,17 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
-	import { adminState, playerState, requestTogglePlay } from '$lib/stores/admin.svelte';
+	import { adminState, playerState, requestTogglePlay, requestPlayPrevious, requestPlayNext, requestSeek, loadTracks } from '$lib/stores/admin.svelte';
 	import { initPlayer } from '$lib/utils/player';
 	import favicon from '$lib/assets/favicon.svg';
-	import DashboardIcon from '@iconify-svelte/lucide/layout-dashboard';
-	import MusicNoteIcon from '@iconify-svelte/lucide/music';
-	import ImageIcon from '@iconify-svelte/lucide/image';
-	import PlayIcon from '@iconify-svelte/lucide/play';
-	import PauseIcon from '@iconify-svelte/lucide/pause';
+	import { LayoutDashboard, Music, Image, Play, Pause, SkipBack, SkipForward } from '@lucide/svelte';
 
 	let { children } = $props();
 
-	const navItems: { icon: typeof DashboardIcon; label: string; href: '/admin/dashboard' | '/admin/music' | '/admin/image' }[] = [
-		{ icon: DashboardIcon, label: '仪表盘', href: '/admin/dashboard' },
-		{ icon: MusicNoteIcon, label: '音乐管理', href: '/admin/music' },
-		{ icon: ImageIcon, label: '图片管理', href: '/admin/image' }
+	const navItems: { icon: typeof LayoutDashboard; label: string; href: '/admin/dashboard' | '/admin/music' | '/admin/image' }[] = [
+		{ icon: LayoutDashboard, label: '仪表盘', href: '/admin/dashboard' },
+		{ icon: Music, label: '音乐管理', href: '/admin/music' },
+		{ icon: Image, label: '图片管理', href: '/admin/image' }
 	];
 
 	function navHref(href: '/admin/dashboard' | '/admin/music' | '/admin/image') {
@@ -36,8 +32,31 @@
 
 	let track = $derived($playerState.currentTrack);
 	let playing = $derived($playerState.playing);
+	let hasTracks = $derived($playerState.tracks.length > 0);
+	let currentTime = $derived($playerState.currentTime);
+	let duration = $derived($playerState.duration);
+	let progress = $derived(duration > 0 ? (currentTime / duration) * 100 : 0);
 
-	onMount(initPlayer);
+	function handleProgressClick(e: MouseEvent & { currentTarget: HTMLDivElement }) {
+		if (!duration) return;
+		const rect = e.currentTarget.getBoundingClientRect();
+		const ratio = (e.clientX - rect.left) / rect.width;
+		requestSeek(ratio * duration);
+	}
+
+	onMount(async () => {
+		await initPlayer();
+		// 加载歌曲列表供 sidebar 播放
+		try {
+			const res = await fetch('/api/music');
+			if (res.ok) {
+				const data = (await res.json()) as { items: import('$lib/types/music').Music[] };
+				loadTracks(data.items);
+			}
+		} catch (e) {
+			console.error('加载歌曲列表失败:', e);
+		}
+	});
 </script>
 
 <div class="flex h-screen flex-col overflow-hidden bg-bg-primary">
@@ -84,7 +103,20 @@
 			</nav>
 
 			<!-- 底部播放区 -->
-			<div class="-mb-4 -mx-4 border-t border-border-primary">
+			<div class="-mb-4 -mx-4">
+				<!-- 进度条 -->
+				<div
+					class="relative h-0.5 cursor-pointer bg-border-primary"
+					onclick={handleProgressClick}
+					role="slider"
+					aria-label="播放进度"
+					aria-valuenow={Math.round(progress)}
+					aria-valuemin={0}
+					aria-valuemax={100}
+					tabindex="-1"
+				>
+					<div class="h-full bg-text-primary transition-[width] duration-100" style:width="{progress}%"></div>
+				</div>
 				{#if adminState.sidebarCollapsed}
 					<div class="flex h-[72px] items-center justify-center">
 						{#if track}
@@ -97,20 +129,20 @@
 									<img src={`/files/${track.cover_file_key}`} alt="" class="h-full w-full object-cover" />
 								{:else}
 									<div class="flex h-full w-full items-center justify-center bg-bg-primary text-text-disabled">
-										<MusicNoteIcon class="h-4 w-4" />
+										<Music class="h-4 w-4" />
 									</div>
 								{/if}
 								<div class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
 									{#if playing}
-										<PauseIcon class="h-4 w-4 text-white" />
+										<Pause class="h-4 w-4 text-white" fill="currentColor" />
 									{:else}
-										<PlayIcon class="h-4 w-4 text-white" />
+										<Play class="h-4 w-4 text-white" fill="currentColor" />
 									{/if}
 								</div>
 							</button>
 						{:else}
 							<div class="flex h-11 w-11 items-center justify-center rounded-lg border border-border-primary bg-bg-primary text-text-disabled">
-								<MusicNoteIcon class="h-4 w-4" />
+								<Music class="h-4 w-4" />
 							</div>
 						{/if}
 					</div>
@@ -121,7 +153,7 @@
 								<img src={`/files/${track.cover_file_key}`} alt="" class="h-full w-full object-cover" />
 							{:else}
 								<div class="flex h-full w-full items-center justify-center text-text-disabled">
-									<MusicNoteIcon class="h-4 w-4" />
+									<Music class="h-4 w-4" />
 								</div>
 							{/if}
 						</div>
@@ -133,20 +165,36 @@
 								<p class="text-xs text-text-disabled">暂无播放</p>
 							{/if}
 						</div>
-						<button
-							onclick={track ? requestTogglePlay : undefined}
-							disabled={!track}
-							class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-primary transition-colors"
-							class:hover:text-primary={!!track}
-							class:opacity-30={!track}
-							aria-label={playing ? '暂停' : '播放'}
-						>
-							{#if playing}
-								<PauseIcon class="h-4 w-4" />
-							{:else}
-								<PlayIcon class="h-4 w-4" />
-							{/if}
-						</button>
+						<div class="flex shrink-0 items-center gap-1">
+							<button
+								onclick={requestPlayPrevious}
+								class="flex h-7 w-7 items-center justify-center rounded-full text-text-primary transition-colors hover:text-primary"
+								aria-label="上一首"
+							>
+								<SkipBack class="h-4 w-4" fill="currentColor" />
+							</button>
+							<button
+								onclick={hasTracks ? requestTogglePlay : undefined}
+								disabled={!hasTracks}
+								class="flex h-7 w-7 items-center justify-center rounded-full text-text-primary transition-colors"
+								class:hover:text-primary={hasTracks}
+								class:opacity-30={!hasTracks}
+								aria-label={playing ? '暂停' : '播放'}
+							>
+								{#if playing}
+									<Pause class="h-4 w-4" fill="currentColor" />
+								{:else}
+									<Play class="h-4 w-4" fill="currentColor" />
+								{/if}
+							</button>
+							<button
+								onclick={requestPlayNext}
+								class="flex h-7 w-7 items-center justify-center rounded-full text-text-primary transition-colors hover:text-primary"
+								aria-label="下一首"
+							>
+								<SkipForward class="h-4 w-4" fill="currentColor" />
+							</button>
+						</div>
 					</div>
 				{/if}
 			</div>
