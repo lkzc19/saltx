@@ -153,17 +153,6 @@
 		<div class="flex items-center justify-between border-b border-border-primary px-5 py-4">
 			<h3 class="text-sm font-semibold text-text-primary">{isAdding ? '新增音乐' : '音乐详情'}</h3>
 			<div class="flex items-center gap-1">
-				{#if !editing && !isAdding}
-					<button
-						onclick={startEdit}
-						class="flex h-7 items-center gap-1 rounded px-2 text-xs text-text-primary transition-colors hover:bg-border hover:text-text-primary"
-					>
-						<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-						</svg>
-						编辑
-					</button>
-				{/if}
 				<button
 					onclick={close}
 					class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text-primary"
@@ -176,47 +165,51 @@
 			</div>
 		</div>
 
-		<div class="flex-1 overflow-auto p-5">
+		<div class="flex flex-1 flex-col overflow-auto p-5">
 			{#if editing || isAdding}
 				<!-- 编辑/新增模式 -->
-				<div class="space-y-4">
+				<div class="flex h-full flex-col space-y-4">
 					<!-- 封面 -->
 					<div>
 						<span class="text-xs text-text-disabled">封面</span>
-						<div class="mt-2 flex items-center gap-3">
-							<div class="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-border-primary bg-bg-primary">
-								{#if editCoverFileKey}
-									<img
-										src={`/files/${editCoverFileKey}`}
-										alt="封面"
-										class="h-full w-full object-cover"
-									/>
-								{:else}
-									<div class="flex h-full w-full items-center justify-center text-text-disabled">
-										<svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-										</svg>
-									</div>
-								{/if}
-							</div>
-							<div class="flex flex-col gap-1.5">
-								<button
-									type="button"
-									onclick={() => (pickerOpen = true)}
-									class="h-7 rounded border border-border-primary px-2.5 text-xs text-text-primary transition-colors hover:bg-border hover:text-text-primary"
-								>
-									{editCoverFileKey ? '更换封面' : '选择封面'}
-								</button>
-								{#if editCoverFileKey}
+						<div
+							class="group relative mt-2 w-full cursor-pointer overflow-hidden rounded-md border border-border-primary bg-bg-secondary"
+							style="aspect-ratio: 1/1"
+						>
+							{#if editCoverFileKey}
+								<img
+									src={`/files/${editCoverFileKey}`}
+									alt="封面"
+									class="h-full w-full object-cover"
+								/>
+								<div class="absolute inset-0 flex flex-col opacity-0 transition-opacity group-hover:opacity-100">
+									<button
+										type="button"
+										onclick={() => (pickerOpen = true)}
+										class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60"
+									>
+										替换封面
+									</button>
 									<button
 										type="button"
 										onclick={clearCover}
-										class="h-7 rounded border border-border-primary px-2.5 text-xs text-text-disabled transition-colors hover:text-error"
+										class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60"
 									>
 										移除封面
 									</button>
-								{/if}
-							</div>
+								</div>
+							{:else}
+								<button
+									type="button"
+									onclick={() => (pickerOpen = true)}
+									class="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 text-text-disabled"
+								>
+									<svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
+									</svg>
+									<span class="text-xs">点击上传封面</span>
+								</button>
+							{/if}
 						</div>
 					</div>
 
@@ -227,7 +220,7 @@
 							id="detail-name"
 							type="text"
 							bind:value={editName}
-							class="h-9 w-full rounded-md border border-border-primary bg-bg-primary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
+							class="h-9 w-full rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
 						/>
 					</div>
 
@@ -238,40 +231,35 @@
 							id="detail-artist"
 							type="text"
 							bind:value={editArtist}
-							class="h-9 w-full rounded-md border border-border-primary bg-bg-primary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
+							class="h-9 w-full rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
 						/>
 					</div>
 
 					<!-- 音频文件 -->
-					<div class="rounded-md border border-border-primary p-3">
-						<p class="mb-2 text-xs font-medium text-text-primary">{isAdding ? '音频文件' : '替换音乐源（可选）'}</p>
-						<div class="space-y-2">
-							<div>
-								<label for="detail-file" class="mb-1 block text-xs text-text-disabled">音频文件</label>
-								<label class="flex h-8 cursor-pointer items-center rounded-md border border-border-primary bg-bg-primary px-3 text-sm transition-colors hover:border-text-disabled">
-									<span class={newFile ? 'text-text-primary' : 'text-text-disabled'}>
-										{newFile ? newFile.name : '选择音频文件'}
-									</span>
-									<input
-										id="detail-file"
-										bind:this={fileInputEl}
-										type="file"
-										accept="audio/*"
-										class="hidden"
-										onchange={(e) => {
-											newFile = (e.target as HTMLInputElement).files?.[0] ?? null;
-										}}
-									/>
-								</label>
-							</div>
-						</div>
+					<div>
+						<label for="detail-file" class="mb-1.5 block text-xs text-text-disabled">{isAdding ? '音频文件' : '替换音乐源（可选）'}</label>
+						<label class="flex h-9 cursor-pointer items-center rounded-md border border-border-primary bg-bg-secondary px-3 text-sm transition-colors">
+							<span class={newFile ? 'text-text-primary' : 'text-text-disabled'}>
+								{newFile ? newFile.name : '选择音频文件'}
+							</span>
+							<input
+								id="detail-file"
+								bind:this={fileInputEl}
+								type="file"
+								accept="audio/*"
+								class="hidden"
+								onchange={(e) => {
+									newFile = (e.target as HTMLInputElement).files?.[0] ?? null;
+								}}
+							/>
+						</label>
 					</div>
 
 					{#if error}
 						<p class="text-xs text-error">{error}</p>
 					{/if}
 
-					<div class="flex gap-2 pt-1">
+					<div class="-mx-5 mt-auto flex gap-2 border-t border-border-primary px-5 pt-3">
 						<button
 							type="button"
 							onclick={cancelEdit}
@@ -295,26 +283,12 @@
 						</button>
 					</div>
 
-					{#if !isAdding}
-						<div class="border-t border-border-primary pt-3">
-							<button
-								type="button"
-								onclick={handleDelete}
-								class="flex h-8 w-full items-center justify-center gap-2 rounded-md border border-error text-sm text-error transition-colors hover:bg-error hover:text-white"
-							>
-								<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-								</svg>
-								删除音乐
-							</button>
-						</div>
-					{/if}
 				</div>
 			{:else if music}
 				<!-- 查看模式 -->
 				<div class="space-y-4">
 					{#if music.cover_file_key}
-						<div class="mx-auto h-32 w-32 overflow-hidden rounded-lg border border-border-primary">
+						<div class="w-full overflow-hidden rounded-md border border-border-primary" style="aspect-ratio: 1/1">
 							<img
 								src={`/files/${music.cover_file_key}`}
 								alt="封面"
@@ -351,17 +325,26 @@
 						<span class="text-xs text-text-disabled">更新时间</span>
 						<p class="mt-1 text-xs text-text-disabled">{formatDate(music.updated_at)}</p>
 					</div>
-
-					<div class="border-t border-border-primary pt-3">
+					<div class="-mx-5 flex gap-2 border-t border-border-primary px-5 pt-3">
+						<button
+							type="button"
+							onclick={startEdit}
+							class="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md border border-border-primary text-sm text-text-primary transition-colors hover:bg-border hover:text-text-primary"
+						>
+							<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+							</svg>
+							编辑
+						</button>
 						<button
 							type="button"
 							onclick={handleDelete}
-							class="flex h-8 w-full items-center justify-center gap-2 rounded-md border border-error text-sm text-error transition-colors hover:bg-error hover:text-white"
+							class="flex h-8 flex-1 items-center justify-center gap-2 rounded-md border border-error text-sm text-error transition-colors hover:bg-error hover:text-white"
 						>
 							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
 							</svg>
-							删除音乐
+							删除
 						</button>
 					</div>
 				</div>

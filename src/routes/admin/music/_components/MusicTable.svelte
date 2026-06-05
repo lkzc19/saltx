@@ -65,7 +65,7 @@
 		<td class="cursor-pointer border-b border-r border-border-primary px-4 align-middle text-text-primary" onclick={() => onselect(item)}>
 			{item.artist}
 		</td>
-		<td class="border-b border-r border-border-primary p-0 text-center">
+		<td class="border-b border-r border-border-primary bg-fg p-0 text-center">
 			<button
 				onclick={(e) => {
 					e.stopPropagation();
