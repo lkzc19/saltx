@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Music, Image } from '$lib/types/music';
-	import { getMusicUrl } from '$lib/utils/music';
+	import { getR2Url } from '$lib/utils/music';
 	import { formatDate } from '$lib/utils/date';
 	import { adminState } from '$lib/stores/admin.svelte';
 	import ImagePickerModal from './ImagePickerModal.svelte';
@@ -8,10 +8,12 @@
 	let {
 		music,
 		onsaved,
+		oncreated,
 		ondeleted
 	}: {
 		music: Music | null;
 		onsaved: (updated: Music) => void;
+		oncreated: (created: Music) => void;
 		ondeleted: () => void;
 	} = $props();
 
@@ -20,7 +22,7 @@
 	let error = $state('');
 	let pickerOpen = $state(false);
 
-	// 编辑表单字段
+	// 表单字段
 	let editName = $state('');
 	let editArtist = $state('');
 	let editCoverFileKey = $state<string | null>(null);
@@ -28,7 +30,20 @@
 	let fileInputEl = $state<HTMLInputElement | undefined>(undefined);
 
 	let fileKey = $derived(music ? music.file_key : '');
-	let fileUrl = $derived(music ? getMusicUrl(music.file_key) : '');
+	let fileUrl = $derived(music ? getR2Url(music.file_key) : '');
+	let isAdding = $derived(adminState.addingMusic);
+
+	// 进入新增模式时自动初始化表单
+	$effect(() => {
+		if (isAdding) {
+			editName = '';
+			editArtist = '';
+			editCoverFileKey = null;
+			newFile = null;
+			error = '';
+			editing = true;
+		}
+	});
 
 	function startEdit() {
 		if (!music) return;
@@ -40,7 +55,20 @@
 		editing = true;
 	}
 
+	function close() {
+		adminState.addingMusic = false;
+		adminState.selectedMusic = null;
+		editing = false;
+		newFile = null;
+		error = '';
+		if (fileInputEl) fileInputEl.value = '';
+	}
+
 	function cancelEdit() {
+		if (isAdding) {
+			close();
+			return;
+		}
 		editing = false;
 		newFile = null;
 		error = '';
@@ -56,7 +84,7 @@
 	}
 
 	async function handleSave() {
-		if (!music || saving) return;
+		if (saving) return;
 		saving = true;
 		error = '';
 
@@ -65,19 +93,40 @@
 			formData.set('name', editName);
 			formData.set('artist', editArtist);
 			formData.set('cover_file_key', editCoverFileKey ?? '');
-			if (newFile) {
+
+			if (isAdding) {
+				// 新增模式：必须有音频文件
+				if (!newFile) {
+					error = '请选择音频文件';
+					saving = false;
+					return;
+				}
 				formData.set('file', newFile);
+				const res = await fetch('/api/admin/music', { method: 'POST', body: formData });
+				if (!res.ok) {
+					const body = (await res.json()) as { error?: string };
+					throw new Error(body.error ?? '创建失败');
+				}
+				const created = (await res.json()) as Music;
+				oncreated(created);
+			} else {
+				// 编辑模式
+				if (!music) return;
+				if (newFile) {
+					formData.set('file', newFile);
+				}
+				const res = await fetch(`/api/admin/music?id=${music.id}`, { method: 'PUT', body: formData });
+				if (!res.ok) {
+					const body = (await res.json()) as { error?: string };
+					throw new Error(body.error ?? '保存失败');
+				}
+				const updated = (await res.json()) as Music;
+				onsaved(updated);
 			}
 
-			const res = await fetch(`/api/admin/music?id=${music.id}`, { method: 'PUT', body: formData });
-			if (!res.ok) {
-				const body = (await res.json()) as { error?: string };
-				throw new Error(body.error ?? '保存失败');
-			}
-			const updated = (await res.json()) as Music;
-			onsaved(updated);
 			editing = false;
 			newFile = null;
+			if (isAdding) adminState.addingMusic = false;
 		} catch (err) {
 			error = (err as Error).message;
 		} finally {
@@ -98,13 +147,13 @@
 	}
 </script>
 
-{#if music}
+{#if music || isAdding}
 	<aside class="flex w-80 shrink-0 flex-col border-l border-border-primary bg-fg">
 		<!-- Header -->
 		<div class="flex items-center justify-between border-b border-border-primary px-5 py-4">
-			<h3 class="text-sm font-semibold text-text-primary">音乐详情</h3>
+			<h3 class="text-sm font-semibold text-text-primary">{isAdding ? '新增音乐' : '音乐详情'}</h3>
 			<div class="flex items-center gap-1">
-				{#if !editing}
+				{#if !editing && !isAdding}
 					<button
 						onclick={startEdit}
 						class="flex h-7 items-center gap-1 rounded px-2 text-xs text-text-primary transition-colors hover:bg-border hover:text-text-primary"
@@ -116,7 +165,7 @@
 					</button>
 				{/if}
 				<button
-					onclick={() => (adminState.selectedMusic = null)}
+					onclick={close}
 					class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text-primary"
 					aria-label="关闭"
 				>
@@ -128,8 +177,8 @@
 		</div>
 
 		<div class="flex-1 overflow-auto p-5">
-			{#if editing}
-				<!-- 编辑模式 -->
+			{#if editing || isAdding}
+				<!-- 编辑/新增模式 -->
 				<div class="space-y-4">
 					<!-- 封面 -->
 					<div>
@@ -193,9 +242,9 @@
 						/>
 					</div>
 
-					<!-- 替换音乐源 -->
+					<!-- 音频文件 -->
 					<div class="rounded-md border border-border-primary p-3">
-						<p class="mb-2 text-xs font-medium text-text-primary">替换音乐源（可选）</p>
+						<p class="mb-2 text-xs font-medium text-text-primary">{isAdding ? '音频文件' : '替换音乐源（可选）'}</p>
 						<div class="space-y-2">
 							<div>
 								<label for="detail-file" class="mb-1 block text-xs text-text-disabled">音频文件</label>
@@ -234,7 +283,7 @@
 							type="button"
 							onclick={handleSave}
 							disabled={saving}
-							class="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md bg-primary text-sm font-medium text-bg-primary transition-opacity hover:opacity-90 disabled:opacity-50"
+							class="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md bg-cf text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
 						>
 							{#if saving}
 								<svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -242,27 +291,28 @@
 									<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
 								</svg>
 							{/if}
-							保存
+							{isAdding ? '创建' : '保存'}
 						</button>
 					</div>
 
-					<div class="border-t border-border-primary pt-3">
-						<button
-							type="button"
-							onclick={handleDelete}
-							class="flex h-8 w-full items-center justify-center gap-2 rounded-md border border-error text-sm text-error transition-colors hover:bg-error hover:text-white"
-						>
-							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-							</svg>
-							删除音乐
-						</button>
-					</div>
+					{#if !isAdding}
+						<div class="border-t border-border-primary pt-3">
+							<button
+								type="button"
+								onclick={handleDelete}
+								class="flex h-8 w-full items-center justify-center gap-2 rounded-md border border-error text-sm text-error transition-colors hover:bg-error hover:text-white"
+							>
+								<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+								</svg>
+								删除音乐
+							</button>
+						</div>
+					{/if}
 				</div>
-			{:else}
+			{:else if music}
 				<!-- 查看模式 -->
 				<div class="space-y-4">
-					<!-- 封面 -->
 					{#if music.cover_file_key}
 						<div class="mx-auto h-32 w-32 overflow-hidden rounded-lg border border-border-primary">
 							<img
@@ -285,14 +335,14 @@
 						<span class="text-xs text-text-disabled">艺术家</span>
 						<p class="mt-1 text-sm text-text-primary">{music.artist}</p>
 					</div>
-						<div>
-							<span class="text-xs text-text-disabled">文件路径</span>
-							<p class="mt-1 break-all font-mono text-xs text-primary">{fileKey}</p>
-						</div>
-						<div>
-							<span class="text-xs text-text-disabled">访问地址</span>
-							<p class="mt-1 break-all font-mono text-xs text-text-primary">{fileUrl}</p>
-						</div>
+					<div>
+						<span class="text-xs text-text-disabled">文件路径</span>
+						<p class="mt-1 break-all font-mono text-xs text-primary">{fileKey}</p>
+					</div>
+					<div>
+						<span class="text-xs text-text-disabled">访问地址</span>
+						<p class="mt-1 break-all font-mono text-xs text-text-primary">{fileUrl}</p>
+					</div>
 					<div>
 						<span class="text-xs text-text-disabled">创建时间</span>
 						<p class="mt-1 text-xs text-text-disabled">{formatDate(music.created_at)}</p>

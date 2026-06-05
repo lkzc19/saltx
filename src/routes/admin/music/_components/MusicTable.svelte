@@ -1,27 +1,29 @@
 <script lang="ts">
 	import type { Music } from '$lib/types/music';
 	import DataTable from '$lib/components/DataTable.svelte';
-	import { Play, Pause } from '@lucide/svelte';
+	import { Play, Pause, Plus } from '@lucide/svelte';
 
 	let {
 		items,
 		selectedId,
 		playingId,
 		onselect,
-		onplay
+		onplay,
+		onadd
 	}: {
 		items: Music[];
 		selectedId: string | null;
 		playingId: string | null;
 		onselect: (item: Music) => void;
 		onplay: (item: Music) => void;
+		onadd: () => void;
 	} = $props();
 
 	const columns = [
 		{ header: '', width: '2.5rem' },
 		{ header: '名称' },
 		{ header: '艺术家' },
-		{ header: '', width: '3rem' }
+		{ header: '', width: '3rem', headerClass: 'px-0 text-center' }
 	];
 </script>
 
@@ -30,6 +32,19 @@
 	data={items}
 	key={(item) => item.id}
 >
+	{#snippet header({ col, index })}
+		{#if index === 3}
+			<button
+				onclick={onadd}
+				class="flex h-6 w-6 items-center justify-center rounded bg-cf text-white transition-opacity hover:opacity-90"
+				aria-label="添加音乐"
+			>
+				<Plus class="h-3.5 w-3.5" />
+			</button>
+		{:else}
+			{col.header}
+		{/if}
+	{/snippet}
 	{#snippet row(item)}
 		<td class="border-b border-r border-border-primary px-2 align-middle" onclick={() => onselect(item)}>
 			<div class="h-8 w-8 overflow-hidden rounded border border-border-primary bg-fg">
@@ -50,25 +65,22 @@
 		<td class="cursor-pointer border-b border-r border-border-primary px-4 align-middle text-text-primary" onclick={() => onselect(item)}>
 			{item.artist}
 		</td>
-		<td class="border-b border-r border-border-primary">
-			<div class="flex h-12 w-12 items-center justify-center">
+		<td class="border-b border-r border-border-primary p-0 text-center">
 			<button
 				onclick={(e) => {
 					e.stopPropagation();
 					onplay(item);
 				}}
-				class="flex h-7 w-7 items-center justify-center rounded-full text-text-primary transition-colors hover:text-primary"
+				class="inline-flex h-6 w-6 items-center justify-center rounded bg-fg text-text-primary transition-colors hover:bg-bg-secondary-hover"
 				class:text-primary={playingId === item.id}
 				aria-label="播放 {item.name}"
 			>
 				{#if playingId === item.id}
-					<Pause class="h-4 w-4" fill="currentColor" />
+					<Pause class="h-3.5 w-3.5" fill="currentColor" />
 				{:else}
-					<Play class="h-4 w-4" fill="currentColor" />
+					<Play class="h-3.5 w-3.5" fill="currentColor" />
 				{/if}
 			</button>
-			</div>
 		</td>
 	{/snippet}
 </DataTable>
-

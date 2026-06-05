@@ -1,11 +1,10 @@
 import { writable, get } from 'svelte/store';
-import type { Music, Image } from '$lib/types/music';
+import type { Music } from '$lib/types/music';
 
 export const adminState = $state({
 	sidebarCollapsed: false,
 	selectedMusic: null as Music | null,
-	selectedImage: null as Image | null,
-	uploadOpen: false
+	addingMusic: false
 });
 
 export const playerState = writable({
@@ -62,8 +61,4 @@ export function requestPlayNext() {
 
 export function loadTracks(tracks: Music[]) {
 	playerState.update((s) => ({ ...s, tracks }));
-}
-
-export function playTrack(index: number) {
-	_playIndex?.(index);
 }

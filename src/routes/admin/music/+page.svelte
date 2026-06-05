@@ -4,15 +4,12 @@
 	import { page } from '$app/state';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import MusicTable from './_components/MusicTable.svelte';
-
 	import MusicDetail from './_components/MusicDetail.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
-	import UploadModal from './_components/UploadModal.svelte';
-	import { adminState, playerState } from '$lib/stores/admin.svelte';
+	import { adminState, playerState, loadTracks } from '$lib/stores/admin.svelte';
 	import type { Music } from '$lib/types/music';
 
 	let { data } = $props();
-	let uploadOpen = $state(false);
 
 	function handlePageChange(p: number, ps: number) {
 		const sp = new SvelteURLSearchParams(page.url.searchParams);
@@ -30,7 +27,9 @@
 		}
 	}
 
-	function handleUploaded() {
+	function handleCreated(created: Music) {
+		// 将新歌曲添加到播放列表
+		loadTracks([...$playerState.tracks, created]);
 		invalidateAll();
 	}
 
@@ -65,6 +64,7 @@
 				playingId={$playerState.currentTrack?.id ?? null}
 				onselect={(item) => (adminState.selectedMusic = item)}
 				onplay={handlePlay}
+				onadd={() => (adminState.addingMusic = true)}
 			/>
 			<Pagination
 				page={data.page}
@@ -74,8 +74,6 @@
 				onchange={handlePageChange}
 			/>
 		</div>
-		<MusicDetail music={adminState.selectedMusic} onsaved={handleSaved} ondeleted={handleDeleted} />
+		<MusicDetail music={adminState.selectedMusic} onsaved={handleSaved} oncreated={handleCreated} ondeleted={handleDeleted} />
 	</div>
 </div>
-
-<UploadModal bind:open={uploadOpen} onuploaded={handleUploaded} />

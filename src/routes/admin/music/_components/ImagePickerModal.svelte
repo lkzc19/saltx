@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getOriginalUrl } from '$lib/utils/music';
+	import { getR2Url } from '$lib/utils/music';
 	import type { Image } from '$lib/types/music';
 
 	let {
@@ -108,7 +108,7 @@
 								onclick={() => handleSelect(img)}
 							>
 								<img
-									src={getOriginalUrl(img.file_key)}
+									src={getR2Url(img.file_key)}
 									alt={img.name}
 									class="h-full w-full object-cover"
 								/>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Image } from '$lib/types/music';
-	import { getOriginalUrl } from '$lib/utils/music';
+	import { getR2Url } from '$lib/utils/music';
 
 	let { image, onclose, ondelete }: { image: Image | null; onclose: () => void; ondelete: (id: string) => void } = $props();
 </script>
@@ -13,7 +13,7 @@
 			<button
 				onclick={onclose}
 				aria-label="关闭"
-				class="absolute -top-10 right-0 flex h-8 w-8 items-center justify-center rounded text-text-primary transition-colors hover:text-text-primary"
+				class="absolute -top-10 right-0 flex h-8 w-8 items-center justify-center rounded text-text-primary transition-colors hover:text-text-primary-hover"
 			>
 				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -21,7 +21,7 @@
 			</button>
 
 			<img
-				src={getOriginalUrl(image.file_key)}
+				src={getR2Url(image.file_key)}
 				alt={image.name}
 				class="max-h-[80vh] max-w-[90vw] rounded-lg object-contain"
 			/>

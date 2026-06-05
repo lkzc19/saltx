@@ -6,12 +6,14 @@
 		data,
 		key,
 		row,
+		header,
 		emptyText = '暂无数据'
 	}: {
-		columns: { header: string; width?: string }[];
+		columns: { header: string; width?: string; headerClass?: string; class?: string }[];
 		data: T[];
 		key: (item: T) => string;
 		row: Snippet<[T]>;
+		header?: Snippet<[{ col: { header: string; width?: string; headerClass?: string; class?: string }; index: number }]>;
 		emptyText?: string;
 	} = $props();
 </script>
@@ -20,12 +22,16 @@
 	<table class="w-full border-t border-l border-border-primary text-sm">
 		<thead>
 			<tr class="h-12 bg-fg text-left text-text-primary">
-				{#each columns as col}
+				{#each columns as col, i}
 					<th
-						class="border-b border-r border-border-primary px-4"
+						class="border-b border-r border-border-primary px-4 {col.headerClass ?? ''}"
 						style={col.width ? `width:${col.width}` : ''}
 					>
-						{col.header}
+						{#if header}
+							{@render header({ col, index: i })}
+						{:else}
+							{col.header}
+						{/if}
 					</th>
 				{/each}
 			</tr>

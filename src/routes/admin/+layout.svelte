@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { adminState, playerState, requestTogglePlay, requestPlayPrevious, requestPlayNext, requestSeek, loadTracks } from '$lib/stores/admin.svelte';
-	import { initPlayer } from '$lib/utils/player';
+	import { initPlayer, destroyPlayer } from '$lib/utils/player';
 	import favicon from '$lib/assets/favicon.svg';
 	import { LayoutDashboard, Music, Image, Play, Pause, SkipBack, SkipForward } from '@lucide/svelte';
 
@@ -44,18 +44,15 @@
 		requestSeek(ratio * duration);
 	}
 
-	onMount(async () => {
-		await initPlayer();
+	onMount(() => {
+		initPlayer();
 		// 加载歌曲列表供 sidebar 播放
-		try {
-			const res = await fetch('/api/music');
-			if (res.ok) {
-				const data = (await res.json()) as { items: import('$lib/types/music').Music[] };
-				loadTracks(data.items);
-			}
-		} catch (e) {
-			console.error('加载歌曲列表失败:', e);
-		}
+		fetch('/api/music')
+			.then((res) => res.ok ? res.json() : Promise.reject(new Error('加载失败')))
+			.then((data) => loadTracks((data as { items: import('$lib/types/music').Music[] }).items))
+			.catch((e) => console.error('加载歌曲列表失败:', e));
+
+		return destroyPlayer;
 	});
 </script>
 
@@ -105,9 +102,11 @@
 			<!-- 底部播放区 -->
 			<div class="-mb-4 -mx-4">
 				<!-- 进度条 -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<div
 					class="relative h-0.5 cursor-pointer bg-border-primary"
 					onclick={handleProgressClick}
+					onkeydown={() => {}}
 					role="slider"
 					aria-label="播放进度"
 					aria-valuenow={Math.round(progress)}

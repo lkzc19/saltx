@@ -7,7 +7,7 @@
 	import SwitchIcon from '@iconify-svelte/line-md/switch';
 	import SwitchOffIcon from '@iconify-svelte/line-md/switch-off';
 	import type { Music } from '$lib/types/music';
-	import { getMusicUrl, getOriginalUrl } from '$lib/utils/music';
+	import { getR2Url } from '$lib/utils/music';
 
 	type PlayerTrack = Music;
 	type AudioContextWindow = Window &
@@ -272,7 +272,7 @@
 		currentIndex = nextIndex;
 		currentTime = 0;
 		duration = 0;
-		audioEl.src = getMusicUrl(track.file_key);
+		audioEl.src = getR2Url(track.file_key);
 		audioEl.load();
 
 		if (!autoplay) {
@@ -472,7 +472,7 @@
 						{#if currentTrack.cover_file_key}
 							<img
 								class="cover"
-								src={getOriginalUrl(currentTrack.cover_file_key)}
+								src={getR2Url(currentTrack.cover_file_key)}
 								alt={currentTrack.name}
 							/>
 						{:else}

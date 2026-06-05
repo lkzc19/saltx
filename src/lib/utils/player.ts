@@ -1,7 +1,14 @@
 import { browser } from '$app/environment';
 import { get } from 'svelte/store';
 import { playerState, registerPlayerControls } from '$lib/stores/admin.svelte';
-import { getMusicUrl } from '$lib/utils/music';
+import { getR2Url } from '$lib/utils/music';
+
+let _cleanup: (() => void) | null = null;
+
+export function destroyPlayer() {
+	_cleanup?.();
+	_cleanup = null;
+}
 
 export async function initPlayer() {
 	if (!browser) return;
@@ -49,7 +56,7 @@ export async function initPlayer() {
 		if (!track) return;
 
 		const howl = new Howl({
-			src: [getMusicUrl(track.file_key)],
+			src: [getR2Url(track.file_key)],
 			onplay() {
 				playerState.update((s) => ({ ...s, playing: true }));
 				animFrame = requestAnimationFrame(updateTime);
@@ -98,7 +105,7 @@ export async function initPlayer() {
 		}
 	});
 
-	return () => {
+	_cleanup = () => {
 		unsubscribe();
 		if (sound) {
 			sound.unload();

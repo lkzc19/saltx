@@ -7,11 +7,3 @@ export function buildMusicFileKey(id: string, filename: string): string {
 	const ext = dot === -1 ? '' : filename.slice(dot);
 	return `music/${id}${ext}`;
 }
-
-export function getMusicUrl(fileKey: string): string {
-	return getR2Url(fileKey);
-}
-
-export function getOriginalUrl(fileKey: string): string {
-	return getR2Url(fileKey);
-}
