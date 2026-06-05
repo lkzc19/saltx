@@ -150,7 +150,7 @@
 {#if music || isAdding}
 	<aside class="flex w-80 shrink-0 flex-col border-l border-border-primary bg-fg">
 		<!-- Header -->
-		<div class="flex items-center justify-between border-b border-border-primary px-5 py-4">
+		<div class="flex items-center justify-between border-b border-border-primary px-4 py-4">
 			<h3 class="text-sm font-semibold text-text-primary">{isAdding ? '新增音乐' : '音乐详情'}</h3>
 			<div class="flex items-center gap-1">
 				<button
@@ -165,101 +165,147 @@
 			</div>
 		</div>
 
-		<div class="flex flex-1 flex-col overflow-auto p-5">
-			{#if editing || isAdding}
-				<!-- 编辑/新增模式 -->
-				<div class="flex h-full flex-col space-y-4">
-					<!-- 封面 -->
-					<div>
-						<span class="text-xs text-text-disabled">封面</span>
-						<div
-							class="group relative mt-2 w-full cursor-pointer overflow-hidden rounded-md border border-border-primary bg-bg-secondary"
-							style="aspect-ratio: 1/1"
-						>
-							{#if editCoverFileKey}
-								<img
-									src={`/files/${editCoverFileKey}`}
-									alt="封面"
-									class="h-full w-full object-cover"
-								/>
-								<div class="absolute inset-0 flex flex-col opacity-0 transition-opacity group-hover:opacity-100">
+		<!-- 内容区 -->
+		<div class="flex flex-1 flex-col">
+			<div class="flex-1 overflow-auto p-4">
+				{#if editing || isAdding}
+					<!-- 编辑/新增模式 -->
+					<div class="space-y-4">
+						<!-- 封面 -->
+						<div>
+							<span class="text-xs text-text-disabled">封面</span>
+							<div
+								class="group relative mt-2 w-full cursor-pointer overflow-hidden rounded-md border border-border-primary bg-bg-secondary"
+								style="aspect-ratio: 1/1"
+							>
+								{#if editCoverFileKey}
+									<img
+										src={`/files/${editCoverFileKey}`}
+										alt="封面"
+										class="h-full w-full object-cover"
+									/>
+									<div class="absolute inset-0 flex flex-col opacity-0 transition-opacity group-hover:opacity-100">
+										<button
+											type="button"
+											onclick={() => (pickerOpen = true)}
+											class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60"
+										>
+											替换封面
+										</button>
+										<button
+											type="button"
+											onclick={clearCover}
+											class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60"
+										>
+											移除封面
+										</button>
+									</div>
+								{:else}
 									<button
 										type="button"
 										onclick={() => (pickerOpen = true)}
-										class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60"
+										class="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 text-text-disabled"
 									>
-										替换封面
+										<svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
+										</svg>
+										<span class="text-xs">点击上传封面</span>
 									</button>
-									<button
-										type="button"
-										onclick={clearCover}
-										class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60"
-									>
-										移除封面
-									</button>
-								</div>
-							{:else}
-								<button
-									type="button"
-									onclick={() => (pickerOpen = true)}
-									class="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 text-text-disabled"
-								>
-									<svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
-									</svg>
-									<span class="text-xs">点击上传封面</span>
-								</button>
-							{/if}
+								{/if}
+							</div>
+						</div>
+
+						<!-- 名称 -->
+						<div>
+							<label for="detail-name" class="mb-1.5 block text-xs text-text-disabled">名称</label>
+							<input
+								id="detail-name"
+								type="text"
+								bind:value={editName}
+								class="h-9 w-full rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
+							/>
+						</div>
+
+						<!-- 艺术家 -->
+						<div>
+							<label for="detail-artist" class="mb-1.5 block text-xs text-text-disabled">艺术家</label>
+							<input
+								id="detail-artist"
+								type="text"
+								bind:value={editArtist}
+								class="h-9 w-full rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
+							/>
+						</div>
+
+						<!-- 音频文件 -->
+						<div>
+							<label for="detail-file" class="mb-1.5 block text-xs text-text-disabled">{isAdding ? '音频文件' : '替换音乐源（可选）'}</label>
+							<label class="flex h-9 cursor-pointer items-center rounded-md border border-border-primary bg-bg-secondary px-3 text-sm transition-colors">
+								<span class={newFile ? 'text-text-primary' : 'text-text-disabled'}>
+									{newFile ? newFile.name : '选择音频文件'}
+								</span>
+								<input
+									id="detail-file"
+									bind:this={fileInputEl}
+									type="file"
+									accept="audio/*"
+									class="hidden"
+									onchange={(e) => {
+										newFile = (e.target as HTMLInputElement).files?.[0] ?? null;
+									}}
+								/>
+							</label>
+						</div>
+
+						{#if error}
+							<p class="text-xs text-error">{error}</p>
+						{/if}
+					</div>
+				{:else if music}
+					<!-- 查看模式 -->
+					<div class="space-y-4">
+						{#if music.cover_file_key}
+							<div class="w-full overflow-hidden rounded-md border border-border-primary" style="aspect-ratio: 1/1">
+								<img
+									src={`/files/${music.cover_file_key}`}
+									alt="封面"
+									class="h-full w-full object-cover"
+								/>
+							</div>
+						{/if}
+
+						<div>
+							<span class="text-xs text-text-disabled">ID</span>
+							<p class="mt-1 font-mono text-sm text-text-primary">{music.id}</p>
+						</div>
+						<div>
+							<span class="text-xs text-text-disabled">名称</span>
+							<p class="mt-1 text-sm text-text-primary">{music.name}</p>
+						</div>
+						<div>
+							<span class="text-xs text-text-disabled">艺术家</span>
+							<p class="mt-1 text-sm text-text-primary">{music.artist}</p>
+						</div>
+						<div>
+							<span class="text-xs text-text-disabled">文件路径</span>
+							<p class="mt-1 break-all font-mono text-xs text-primary">{fileKey}</p>
+						</div>
+						<div>
+							<span class="text-xs text-text-disabled">创建时间</span>
+							<p class="mt-1 text-xs text-text-disabled">{formatDate(music.created_at)}</p>
+						</div>
+						<div>
+							<span class="text-xs text-text-disabled">更新时间</span>
+							<p class="mt-1 text-xs text-text-disabled">{formatDate(music.updated_at)}</p>
 						</div>
 					</div>
+				{/if}
+			</div>
 
-					<!-- 名称 -->
-					<div>
-						<label for="detail-name" class="mb-1.5 block text-xs text-text-disabled">名称</label>
-						<input
-							id="detail-name"
-							type="text"
-							bind:value={editName}
-							class="h-9 w-full rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
-						/>
-					</div>
-
-					<!-- 艺术家 -->
-					<div>
-						<label for="detail-artist" class="mb-1.5 block text-xs text-text-disabled">艺术家</label>
-						<input
-							id="detail-artist"
-							type="text"
-							bind:value={editArtist}
-							class="h-9 w-full rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
-						/>
-					</div>
-
-					<!-- 音频文件 -->
-					<div>
-						<label for="detail-file" class="mb-1.5 block text-xs text-text-disabled">{isAdding ? '音频文件' : '替换音乐源（可选）'}</label>
-						<label class="flex h-9 cursor-pointer items-center rounded-md border border-border-primary bg-bg-secondary px-3 text-sm transition-colors">
-							<span class={newFile ? 'text-text-primary' : 'text-text-disabled'}>
-								{newFile ? newFile.name : '选择音频文件'}
-							</span>
-							<input
-								id="detail-file"
-								bind:this={fileInputEl}
-								type="file"
-								accept="audio/*"
-								class="hidden"
-								onchange={(e) => {
-									newFile = (e.target as HTMLInputElement).files?.[0] ?? null;
-								}}
-							/>
-						</label>
-					</div>
-
-					{#if error}
-						<p class="text-xs text-error">{error}</p>
-					{/if}
-
-					<div class="-mx-5 mt-auto flex gap-2 border-t border-border-primary px-5 pt-3">
+			<!-- 按钮区 -->
+			<div class="flex min-h-18 items-center border-t border-border-primary px-4">
+				{#if editing || isAdding}
+					<div class="flex w-full gap-2">
 						<button
 							type="button"
 							onclick={cancelEdit}
@@ -282,50 +328,8 @@
 							{isAdding ? '创建' : '保存'}
 						</button>
 					</div>
-
-				</div>
-			{:else if music}
-				<!-- 查看模式 -->
-				<div class="space-y-4">
-					{#if music.cover_file_key}
-						<div class="w-full overflow-hidden rounded-md border border-border-primary" style="aspect-ratio: 1/1">
-							<img
-								src={`/files/${music.cover_file_key}`}
-								alt="封面"
-								class="h-full w-full object-cover"
-							/>
-						</div>
-					{/if}
-
-					<div>
-						<span class="text-xs text-text-disabled">ID</span>
-						<p class="mt-1 font-mono text-sm text-text-primary">{music.id}</p>
-					</div>
-					<div>
-						<span class="text-xs text-text-disabled">名称</span>
-						<p class="mt-1 text-sm text-text-primary">{music.name}</p>
-					</div>
-					<div>
-						<span class="text-xs text-text-disabled">艺术家</span>
-						<p class="mt-1 text-sm text-text-primary">{music.artist}</p>
-					</div>
-					<div>
-						<span class="text-xs text-text-disabled">文件路径</span>
-						<p class="mt-1 break-all font-mono text-xs text-primary">{fileKey}</p>
-					</div>
-					<div>
-						<span class="text-xs text-text-disabled">访问地址</span>
-						<p class="mt-1 break-all font-mono text-xs text-text-primary">{fileUrl}</p>
-					</div>
-					<div>
-						<span class="text-xs text-text-disabled">创建时间</span>
-						<p class="mt-1 text-xs text-text-disabled">{formatDate(music.created_at)}</p>
-					</div>
-					<div>
-						<span class="text-xs text-text-disabled">更新时间</span>
-						<p class="mt-1 text-xs text-text-disabled">{formatDate(music.updated_at)}</p>
-					</div>
-					<div class="-mx-5 flex gap-2 border-t border-border-primary px-5 pt-3">
+				{:else if music}
+					<div class="flex w-full gap-2">
 						<button
 							type="button"
 							onclick={startEdit}
@@ -347,8 +351,8 @@
 							删除
 						</button>
 					</div>
-				</div>
-			{/if}
+				{/if}
+			</div>
 		</div>
 	</aside>
 {/if}

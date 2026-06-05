@@ -38,7 +38,7 @@
 	});
 </script>
 
-<div class="-mx-6 flex items-center justify-between border-t border-border-primary px-6 pt-3 text-sm">
+<div class="text-sm flex items-center justify-between">
 	<span class="text-text-disabled">共 {total} 条</span>
 	<div class="flex items-center gap-1">
 		<button

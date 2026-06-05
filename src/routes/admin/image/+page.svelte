@@ -50,10 +50,14 @@
 </svelte:head>
 
 <div class="flex h-full">
-	<div class="flex min-w-0 flex-1 flex-col p-6">
+	<div class="flex min-w-0 flex-1 flex-col">
+		<div class="flex-1 overflow-auto p-4">
 		<ImageSearchBar filters={data.filters} onsearch={handleSearch} onupload={() => (uploadOpen = true)} />
 		<ImageGrid items={data.items} onselect={handleSelect} />
-		<Pagination page={data.page} pageSize={data.pageSize} total={data.total} totalPages={data.totalPages} onchange={handlePageChange} />
+		</div>
+				<div class="flex min-h-18 items-center border-t border-border-primary px-4">
+				<Pagination page={data.page} pageSize={data.pageSize} total={data.total} totalPages={data.totalPages} onchange={handlePageChange} />
+			</div>
 	</div>
 </div>
 

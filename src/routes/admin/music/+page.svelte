@@ -28,7 +28,6 @@
 	}
 
 	function handleCreated(created: Music) {
-		// 将新歌曲添加到播放列表
 		loadTracks([...$playerState.tracks, created]);
 		invalidateAll();
 	}
@@ -57,22 +56,26 @@
 
 <div class="flex h-full flex-col">
 	<div class="flex min-h-0 flex-1">
-		<div class="flex min-w-0 flex-1 flex-col p-6">
-			<MusicTable
-				items={data.items}
-				selectedId={adminState.selectedMusic?.id ?? null}
-				playingId={$playerState.currentTrack?.id ?? null}
-				onselect={(item) => (adminState.selectedMusic = item)}
-				onplay={handlePlay}
-				onadd={() => (adminState.addingMusic = true)}
-			/>
-			<Pagination
-				page={data.page}
-				pageSize={data.pageSize}
-				total={data.total}
-				totalPages={data.totalPages}
-				onchange={handlePageChange}
-			/>
+		<div class="flex min-w-0 flex-1 flex-col">
+			<div class="flex-1 overflow-auto p-4">
+				<MusicTable
+					items={data.items}
+					selectedId={adminState.selectedMusic?.id ?? null}
+					playingId={$playerState.currentTrack?.id ?? null}
+					onselect={(item) => (adminState.selectedMusic = item)}
+					onplay={handlePlay}
+					onadd={() => (adminState.addingMusic = true)}
+				/>
+			</div>
+			<div class="flex min-h-18 items-center border-t border-border-primary px-4">
+				<Pagination
+					page={data.page}
+					pageSize={data.pageSize}
+					total={data.total}
+					totalPages={data.totalPages}
+					onchange={handlePageChange}
+				/>
+			</div>
 		</div>
 		<MusicDetail music={adminState.selectedMusic} onsaved={handleSaved} oncreated={handleCreated} ondeleted={handleDeleted} />
 	</div>
