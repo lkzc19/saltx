@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
+@import 'overlayscrollbars/styles/overlayscrollbars.css';
 
 @theme {
   --color-cf: var(--color-orange-500);
@@ -27,16 +28,24 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
+/* OverlayScrollbars 自定义样式 */
+.os-scrollbar {
+  --os-size: 6px;
+  --os-padding-perpendicular: 2px;
+  --os-padding-start: 2px;
+  --os-padding-end: 2px;
 }
-::-webkit-scrollbar-track {
+
+.os-scrollbar-track {
   background: var(--color-zinc-100);
 }
-::-webkit-scrollbar-thumb {
+
+.os-scrollbar-thumb {
   background: var(--color-zinc-300);
   border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover {
+
+.os-scrollbar-thumb:hover {
   background: var(--color-zinc-400);
 }
+

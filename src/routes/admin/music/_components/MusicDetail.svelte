@@ -4,6 +4,7 @@
 	import { formatDate } from '$lib/utils/date';
 	import { adminState } from '$lib/stores/admin.svelte';
 	import ImagePickerModal from './ImagePickerModal.svelte';
+	import Scrollbar from '$lib/components/Scrollbar.svelte';
 
 	let {
 		music,
@@ -167,7 +168,8 @@
 
 		<!-- 内容区 -->
 		<div class="min-h-0 flex flex-1 flex-col">
-			<div class="min-h-0 flex-1 overflow-auto p-4">
+			<Scrollbar class="min-h-0 flex-1">
+				<div class="p-4">
 				{#if editing || isAdding}
 					<!-- 编辑/新增模式 -->
 					<div class="space-y-4">
@@ -301,6 +303,7 @@
 					</div>
 				{/if}
 			</div>
+			</Scrollbar>
 
 			<!-- 按钮区 -->
 			<div class="flex min-h-18 items-center border-t border-border-primary px-4">

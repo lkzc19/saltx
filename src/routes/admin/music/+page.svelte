@@ -6,6 +6,7 @@
 	import MusicTable from './_components/MusicTable.svelte';
 	import MusicDetail from './_components/MusicDetail.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
+	import Scrollbar from '$lib/components/Scrollbar.svelte';
 	import { adminState, playerState, loadTracks } from '$lib/stores/admin.svelte';
 	import type { Music } from '$lib/types/music';
 
@@ -57,7 +58,7 @@
 <div class="flex h-full flex-col">
 	<div class="flex min-h-0 flex-1">
 		<div class="flex min-w-0 flex-1 flex-col">
-			<div class="min-h-0 flex-1 overflow-auto p-4">
+			<Scrollbar class="min-h-0 flex-1"><div class="p-4">
 				<MusicTable
 					items={data.items}
 					selectedId={adminState.selectedMusic?.id ?? null}
@@ -67,6 +68,7 @@
 					onadd={() => (adminState.addingMusic = true)}
 				/>
 			</div>
+			</Scrollbar>
 			<div class="flex min-h-18 items-center border-t border-border-primary px-4">
 				<Pagination
 					page={data.page}

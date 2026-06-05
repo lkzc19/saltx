@@ -7,6 +7,7 @@
 	import ImagePreview from './_components/ImagePreview.svelte';
 	import ImageUploadModal from './_components/ImageUploadModal.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
+	import Scrollbar from '$lib/components/Scrollbar.svelte';
 	import ImageSearchBar from './_components/ImageSearchBar.svelte';
 	import type { Image } from '$lib/types/music';
 
@@ -51,10 +52,12 @@
 
 <div class="flex h-full">
 	<div class="flex min-w-0 flex-1 flex-col">
-		<div class="min-h-0 flex-1 overflow-auto p-4">
-		<ImageSearchBar filters={data.filters} onsearch={handleSearch} onupload={() => (uploadOpen = true)} />
-		<ImageGrid items={data.items} onselect={handleSelect} />
-		</div>
+		<Scrollbar class="min-h-0 flex-1">
+			<div class="p-4">
+				<ImageSearchBar filters={data.filters} onsearch={handleSearch} onupload={() => (uploadOpen = true)} />
+				<ImageGrid items={data.items} onselect={handleSelect} />
+			</div>
+		</Scrollbar>
 				<div class="flex min-h-18 items-center border-t border-border-primary px-4">
 				<Pagination page={data.page} pageSize={data.pageSize} total={data.total} totalPages={data.totalPages} onchange={handlePageChange} />
 			</div>

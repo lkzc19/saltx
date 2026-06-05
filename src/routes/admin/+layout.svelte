@@ -6,6 +6,7 @@
 	import { initPlayer, destroyPlayer } from '$lib/utils/player';
 	import favicon from '$lib/assets/favicon.svg';
 	import { LayoutDashboard, Music, Image, Play, Pause, SkipBack, SkipForward } from '@lucide/svelte';
+	import Scrollbar from '$lib/components/Scrollbar.svelte';
 
 	let { children } = $props();
 
@@ -79,7 +80,8 @@
 			class:w-full={!adminState.sidebarCollapsed}
 		>
 			<!-- 导航 -->
-			<nav class="flex-1 overflow-y-auto p-4">
+			<Scrollbar class="flex-1">
+				<nav class="p-4">
 				{#each navItems as item (item.href)}
 					<a
 						href={navHref(item.href)}
@@ -98,6 +100,7 @@
 					</a>
 				{/each}
 			</nav>
+			</Scrollbar>
 
 			<!-- 底部播放区 -->
 			{#if adminState.sidebarCollapsed}
