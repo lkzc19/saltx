@@ -51,7 +51,7 @@
 
 <div class="flex h-full">
 	<div class="flex min-w-0 flex-1 flex-col">
-		<div class="flex-1 overflow-auto p-4">
+		<div class="min-h-0 flex-1 overflow-auto p-4">
 		<ImageSearchBar filters={data.filters} onsearch={handleSearch} onupload={() => (uploadOpen = true)} />
 		<ImageGrid items={data.items} onselect={handleSelect} />
 		</div>

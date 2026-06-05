@@ -148,7 +148,7 @@
 </script>
 
 {#if music || isAdding}
-	<aside class="flex w-80 shrink-0 flex-col border-l border-border-primary bg-fg">
+	<aside class="flex w-80 shrink-0 flex-col overflow-hidden border-l border-border-primary bg-fg">
 		<!-- Header -->
 		<div class="flex items-center justify-between border-b border-border-primary px-4 py-4">
 			<h3 class="text-sm font-semibold text-text-primary">{isAdding ? '新增音乐' : '音乐详情'}</h3>
@@ -166,8 +166,8 @@
 		</div>
 
 		<!-- 内容区 -->
-		<div class="flex flex-1 flex-col">
-			<div class="flex-1 overflow-auto p-4">
+		<div class="min-h-0 flex flex-1 flex-col">
+			<div class="min-h-0 flex-1 overflow-auto p-4">
 				{#if editing || isAdding}
 					<!-- 编辑/新增模式 -->
 					<div class="space-y-4">
