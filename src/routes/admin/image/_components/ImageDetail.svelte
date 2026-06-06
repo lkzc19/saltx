@@ -117,13 +117,31 @@
 
 	function confirmCrop() {
 		cropOpen = false;
-		if (stagingUrl) {
-			if (imageUrl) URL.revokeObjectURL(imageUrl);
-			imageUrl = stagingUrl;
-			stagingUrl = '';
-		}
-	}
+		if (!stagingUrl || !croppedAreaPixels) return;
 
+		const src = stagingUrl;
+		const px = croppedAreaPixels;
+		stagingUrl = "";
+
+		const img = new Image();
+		img.onload = () => {
+			const canvas = document.createElement("canvas");
+			canvas.width = px.width;
+			canvas.height = px.height;
+			const ctx = canvas.getContext("2d");
+			if (!ctx) return;
+			ctx.drawImage(img, px.x, px.y, px.width, px.height, 0, 0, px.width, px.height);
+
+			canvas.toBlob((blob) => {
+				if (!blob) return;
+				if (imageUrl) URL.revokeObjectURL(imageUrl);
+				imageUrl = URL.createObjectURL(blob);
+				backgroundColors = [getMatchingBackgroundColor(canvas)];
+				croppedAreaPixels = null;
+			}, "image/webp", 0.9);
+		};
+		img.src = src;
+	}
 	function cancelCrop() {
 		cropOpen = false;
 		if (stagingUrl) URL.revokeObjectURL(stagingUrl);
@@ -211,24 +229,33 @@
 		return new Promise((resolve, reject) => {
 			const img = new Image();
 			img.onload = () => {
-				const px = croppedAreaPixels!;
-				const canvas = document.createElement('canvas');
-				canvas.width = px.width;
-				canvas.height = px.height;
-				const ctx = canvas.getContext('2d')!;
-				ctx.drawImage(img, px.x, px.y, px.width, px.height, 0, 0, px.width, px.height);
-				const toBlob = (c: HTMLCanvasElement, quality: number) =>
-					new Promise<Blob>((res, rej) =>
-						c.toBlob((b) => (b ? res(b) : rej(new Error('canvas toBlob failed'))), 'image/webp', quality)
-					);
-				toBlob(canvas, 0.9)
-					.then((croppedBlob) => {
+				const px = croppedAreaPixels;
+				const canvas = document.createElement("canvas");
+				if (px) {
+					canvas.width = px.width;
+					canvas.height = px.height;
+				} else {
+					canvas.width = img.naturalWidth;
+					canvas.height = img.naturalHeight;
+				}
+				const ctx = canvas.getContext("2d");
+				if (!ctx) return reject(new Error("canvas getContext failed"));
+				if (px) {
+					ctx.drawImage(img, px.x, px.y, px.width, px.height, 0, 0, px.width, px.height);
+				} else {
+					ctx.drawImage(img, 0, 0);
+				}
+				canvas.toBlob(
+					(blob) => {
+						if (!blob) return reject(new Error("canvas toBlob failed"));
 						resolve({
-							croppedFile: new File([croppedBlob], 'image.webp', { type: 'image/webp' }),
+							croppedFile: new File([blob], "image.webp", { type: "image/webp" }),
 							backgroundColor: getMatchingBackgroundColor(canvas)
 						});
-					})
-					.catch(reject);
+					},
+					"image/webp",
+					0.9
+				);
 			};
 			img.onerror = reject;
 			img.src = imageUrl;
@@ -236,7 +263,7 @@
 	}
 
 	async function handleCreate() {
-		if (!croppedAreaPixels || uploading) return;
+		if (!imageUrl || uploading) return;
 		uploading = true;
 		error = '';
 		try {
@@ -312,9 +339,29 @@
 									<img src={imageUrl} alt="" class="h-full w-full object-cover" />
 									<div class="absolute inset-0 flex flex-col opacity-0 transition-opacity group-hover:opacity-100">
 										<button type="button" onclick={() => fileInput?.click()} class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60">重新上传</button>
-										<button type="button" onclick={() => { cropOpen = true; }} class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60">重新裁剪</button>
 									</div>
 								</div>
+							{/if}
+							{#if hasNewImage}
+								<button type="button" onclick={openSampling} class="w-full rounded-md border border-border-primary py-2 text-sm text-text-primary transition-colors hover:bg-border">取色</button>
+								{#if backgroundColors.length > 0}
+									<div>
+										<span class="text-xs text-text-disabled">背景色</span>
+										<div class="mt-2 flex h-8 w-full rounded">
+{#each backgroundColors as color, i}
+									{#if i === 0}
+										<span class="h-full flex-1" class:rounded-l={true} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color}></span>
+									{:else}
+										<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color} onclick={() => removeColor(i)} aria-label="移除 {color}">
+											<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
+												<svg class="h-3.5 w-3.5 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+											</span>
+										</button>
+									{/if}
+								{/each}
+										</div>
+									</div>
+								{/if}
 							{/if}
 							<div>
 								<label for="image-name" class="mb-1.5 block text-xs text-text-disabled">名称</label>
@@ -333,9 +380,6 @@
 								{/if}
 								<div class="absolute inset-0 flex flex-col opacity-0 transition-opacity group-hover:opacity-100">
 									<button type="button" onclick={() => fileInput?.click()} class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60">重新上传</button>
-									{#if hasNewImage}
-										<button type="button" onclick={() => { cropOpen = true; }} class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60">重新裁剪</button>
-									{/if}
 								</div>
 							</div>
 
@@ -345,13 +389,17 @@
 								<div>
 									<span class="text-xs text-text-disabled">背景色</span>
 									<div class="mt-2 flex h-8 w-full rounded">
-										{#each backgroundColors as color, i}
-											<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color} onclick={() => removeColor(i)} aria-label="移除 {color}">
-												<span class="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 transition-opacity group-hover/swatch:opacity-100">
-													<svg class="h-4 w-4 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-												</span>
-											</button>
-										{/each}
+{#each backgroundColors as color, i}
+									{#if i === 0}
+										<span class="h-full flex-1" class:rounded-l={true} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color}></span>
+									{:else}
+										<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color} onclick={() => removeColor(i)} aria-label="移除 {color}">
+											<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
+												<svg class="h-3.5 w-3.5 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+											</span>
+										</button>
+									{/if}
+								{/each}
 									</div>
 								</div>
 							{/if}
@@ -394,7 +442,7 @@
 				{#if isAdding}
 					<div class="flex w-full gap-2">
 						<button type="button" onclick={close} class="h-8 flex-1 rounded-md border border-border-primary text-sm text-text-primary transition-colors hover:bg-border hover:text-text-primary">取消</button>
-						<button type="button" onclick={handleCreate} disabled={!hasNewImage || !croppedAreaPixels || uploading} class="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md bg-cf text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50">
+						<button type="button" onclick={handleCreate} disabled={!hasNewImage || uploading} class="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md bg-cf text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50">
 							{#if uploading}<svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>{/if}
 							创建
 						</button>
@@ -483,14 +531,17 @@
 			{#if backgroundColors.length > 0}
 				<div class="border-t border-border-primary p-4">
 					<div class="flex h-8 w-full rounded">
-						{#each backgroundColors as color, i}
-							<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color} onclick={() => removeColor(i)} aria-label="移除 {color}">
-								<span class="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-0.5 text-xs text-white opacity-0 transition-opacity group-hover/swatch:opacity-100">{color}</span>
-								<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
-									<svg class="h-4 w-4 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-								</span>
-							</button>
-						{/each}
+{#each backgroundColors as color, i}
+									{#if i === 0}
+										<span class="h-full flex-1" class:rounded-l={true} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color}></span>
+									{:else}
+										<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color} onclick={() => removeColor(i)} aria-label="移除 {color}">
+											<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
+												<svg class="h-3.5 w-3.5 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+											</span>
+										</button>
+									{/if}
+								{/each}
 					</div>
 				</div>
 			{/if}
