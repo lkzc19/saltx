@@ -81,20 +81,45 @@ export const PUT: RequestHandler = async ({ url, request, platform }) => {
 	const id = url.searchParams.get('id');
 	if (!id) return json({ error: '缺少参数: id' }, { status: 400 });
 
-	const body = await request.json() as { name?: string; aspect_ratio?: string };
+	const formData = await request.formData();
+	const name = formData.get('name')?.toString();
+	const aspectRatio = formData.get('aspect_ratio')?.toString();
+	const backgroundColor = normalizeBackgroundColor(formData.get('background_color')?.toString() ?? null);
+	const file = formData.get('file') as File | null;
 
 	const db = getDb(platform!.env.DB);
 	const existing = await db.select().from(image).where(eq(image.id, id)).get();
 	if (!existing) return json({ error: '图片不存在' }, { status: 404 });
 
-	if (body.aspect_ratio && body.aspect_ratio !== '1:1') {
+	if (aspectRatio && aspectRatio !== '1:1') {
 		return json({ error: '暂仅支持 1:1 比例' }, { status: 400 });
 	}
 
 	const updates: Record<string, string> = {};
-	if (body.name) updates.name = body.name;
-	if (body.aspect_ratio) updates.aspect_ratio = body.aspect_ratio;
+	if (name) updates.name = name;
+	if (aspectRatio) updates.aspect_ratio = aspectRatio;
+	if (backgroundColor) updates.background_color = backgroundColor;
 	updates.updated_at = new Date().toISOString();
+
+	// 如果有新文件，替换原图
+	if (file) {
+		const bucket = platform!.env.BUCKET;
+		const ext = getExtension(file.name);
+		const newFileKey = `image/${id}.${ext}`;
+
+		// 删除旧文件
+		if (existing.file_key) {
+			await bucket.delete(existing.file_key);
+		}
+
+		// 上传新文件
+		await bucket.put(newFileKey, await file.arrayBuffer(), {
+			httpMetadata: { contentType: file.type }
+		});
+
+		updates.file_key = newFileKey;
+		updates.extension = ext;
+	}
 
 	const record = await db
 		.update(image)

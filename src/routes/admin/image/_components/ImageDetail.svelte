@@ -23,6 +23,7 @@
 	let editing = $state(false);
 	let name = $state('');
 	let imageUrl = $state('');
+	let stagingUrl = $state('');
 	let crop = $state({ x: 0, y: 0 });
 	let zoom = $state(1);
 	let croppedAreaPixels = $state<CropArea | null>(null);
@@ -39,6 +40,8 @@
 		name = '';
 		if (imageUrl) URL.revokeObjectURL(imageUrl);
 		imageUrl = '';
+		if (stagingUrl) URL.revokeObjectURL(stagingUrl);
+		stagingUrl = '';
 		crop = { x: 0, y: 0 };
 		zoom = 1;
 		croppedAreaPixels = null;
@@ -59,6 +62,7 @@
 		editing = true;
 		name = image.name;
 		imageUrl = '';
+		stagingUrl = '';
 		croppedAreaPixels = null;
 		error = '';
 	}
@@ -67,6 +71,8 @@
 		editing = false;
 		if (imageUrl) URL.revokeObjectURL(imageUrl);
 		imageUrl = '';
+		if (stagingUrl) URL.revokeObjectURL(stagingUrl);
+		stagingUrl = '';
 		error = '';
 		if (fileInput) fileInput.value = '';
 	}
@@ -74,13 +80,33 @@
 	function handleFileSelect(e: Event) {
 		const f = (e.target as HTMLInputElement).files?.[0];
 		if (!f) return;
-		if (!editing) name = f.name.replace(/\.[^/.]+$/, '');
-		if (imageUrl) URL.revokeObjectURL(imageUrl);
-		imageUrl = URL.createObjectURL(f);
+		if (!editing && !imageUrl) name = f.name.replace(/\.[^/.]+$/, '');
+		if (stagingUrl) URL.revokeObjectURL(stagingUrl);
+		stagingUrl = URL.createObjectURL(f);
 		crop = { x: 0, y: 0 };
 		zoom = 1;
 		croppedAreaPixels = null;
 		cropOpen = true;
+	}
+
+	function confirmCrop() {
+		cropOpen = false;
+		if (stagingUrl) {
+			if (imageUrl) URL.revokeObjectURL(imageUrl);
+			imageUrl = stagingUrl;
+			stagingUrl = '';
+		}
+	}
+
+	function cancelCrop() {
+		cropOpen = false;
+		if (stagingUrl) URL.revokeObjectURL(stagingUrl);
+		stagingUrl = '';
+		croppedAreaPixels = null;
+		if (!imageUrl && !editing) {
+			name = '';
+		}
+		if (fileInput) fileInput.value = '';
 	}
 
 	function handleCropComplete(e: { pixels: CropArea }) {
@@ -449,7 +475,7 @@
 		<div class="flex min-h-0 w-full max-w-2xl flex-1 items-center justify-center px-6 py-4">
 			<div class="relative aspect-square w-full overflow-hidden bg-black">
 				<Cropper
-					image={imageUrl}
+					image={stagingUrl}
 					bind:crop
 					bind:zoom
 					aspect={1}
@@ -460,14 +486,14 @@
 		<div class="flex w-full max-w-2xl gap-3 px-6 pb-6">
 			<button
 				type="button"
-				onclick={() => { cropOpen = false; }}
+				onclick={cancelCrop}
 				class="h-9 flex-1 rounded-md border border-white/20 text-sm text-white/80 transition-colors hover:bg-white/10"
 			>
 				取消
 			</button>
 			<button
 				type="button"
-				onclick={() => { cropOpen = false; }}
+				onclick={confirmCrop}
 				class="h-9 flex-1 rounded-md bg-cf text-sm font-medium text-white transition-opacity hover:opacity-90"
 			>
 				确认
