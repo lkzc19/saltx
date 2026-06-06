@@ -444,8 +444,10 @@
 <!-- 取色模态框 -->
 {#if samplingOpen}
 	<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-		<div class="flex w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-fg shadow-2xl">
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+		onclick={closeSampling} onkeydown={(e) => e.key === "Escape" && closeSampling()}>
+		<div class="flex w-full max-w-2xl flex-col overflow-hidden bg-fg shadow-2xl"
+			onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 			<div class="flex items-center justify-between border-b border-border-primary px-4 py-3">
 				<h3 class="text-sm font-semibold text-text-primary">取色</h3>
 				<button onclick={closeSampling} class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text-primary" aria-label="关闭">
@@ -476,14 +478,18 @@
 							{/if}
 						</div>
 					</div>
-						{/if}
+				{/if}
 			</div>
 			{#if backgroundColors.length > 0}
-				<div class="border-t border-border-primary px-4 py-3">
-					<span class="mb-2 block text-xs text-text-disabled">当前背景色</span>
-					<div class="flex h-6 w-full rounded">
+				<div class="border-t border-border-primary p-4">
+					<div class="flex h-8 w-full rounded">
 						{#each backgroundColors as color, i}
-							<span class="h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color}></span>
+							<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color} onclick={() => removeColor(i)} aria-label="移除 {color}">
+								<span class="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-0.5 text-xs text-white opacity-0 transition-opacity group-hover/swatch:opacity-100">{color}</span>
+								<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
+									<svg class="h-4 w-4 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+								</span>
+							</button>
 						{/each}
 					</div>
 				</div>
