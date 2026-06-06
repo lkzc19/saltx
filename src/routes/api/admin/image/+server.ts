@@ -52,7 +52,8 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			name: fileName,
 			extension: ext,
 			aspect_ratio: aspectRatio,
-			background_color: backgroundColor
+			background_color: backgroundColor,
+			background_colors: backgroundColor ? JSON.stringify([backgroundColor]) : null
 		})
 		.returning()
 		.get();
@@ -85,6 +86,7 @@ export const PUT: RequestHandler = async ({ url, request, platform }) => {
 	const name = formData.get('name')?.toString();
 	const aspectRatio = formData.get('aspect_ratio')?.toString();
 	const backgroundColor = normalizeBackgroundColor(formData.get('background_color')?.toString() ?? null);
+	const backgroundColorsRaw = formData.get('background_colors')?.toString();
 	const file = formData.get('file') as File | null;
 
 	const db = getDb(platform!.env.DB);
@@ -95,10 +97,24 @@ export const PUT: RequestHandler = async ({ url, request, platform }) => {
 		return json({ error: '暂仅支持 1:1 比例' }, { status: 400 });
 	}
 
-	const updates: Record<string, string> = {};
+	const updates: Record<string, string | null> = {};
 	if (name) updates.name = name;
 	if (aspectRatio) updates.aspect_ratio = aspectRatio;
 	if (backgroundColor) updates.background_color = backgroundColor;
+
+	// 更新背景色列表
+	if (backgroundColorsRaw !== undefined) {
+		try {
+			const colors = JSON.parse(backgroundColorsRaw) as string[];
+			if (Array.isArray(colors) && colors.length > 0) {
+				updates.background_colors = JSON.stringify(colors);
+				updates.background_color = colors[0];
+			}
+		} catch {
+			// 忽略无效的 JSON
+		}
+	}
+
 	updates.updated_at = new Date().toISOString();
 
 	// 如果有新文件，替换原图

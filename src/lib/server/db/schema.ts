@@ -28,6 +28,7 @@ export const image = sqliteTable('image', {
 	extension: text('extension').notNull(),
 	aspect_ratio: text('aspect_ratio').notNull(),
 	background_color: text('background_color'),
+	background_colors: text('background_colors'),
 	created_at: text('created_at')
 		.notNull()
 		.$defaultFn(() => new Date().toISOString()),

@@ -18,9 +18,19 @@
 		onadd: () => void;
 	} = $props();
 
+	function parseColors(raw: string | null): string[] {
+		if (!raw) return [];
+		try {
+			return JSON.parse(raw);
+		} catch {
+			return [];
+		}
+	}
+
 	const columns = [
 		{ header: '', width: '2.5rem' },
 		{ header: '名称' },
+		{ header: '背景色' },
 		{ header: '', width: '3rem', headerClass: 'px-0 text-center' }
 	];
 </script>
@@ -31,7 +41,7 @@
 	key={(item) => item.id}
 >
 	{#snippet header({ col, index })}
-		{#if index === 2}
+		{#if index === 3}
 			<button
 				onclick={onadd}
 				class="flex h-6 w-6 items-center justify-center rounded bg-cf text-white transition-opacity hover:opacity-90"
@@ -51,6 +61,22 @@
 		</td>
 		<td class="cursor-pointer border-b border-r border-border-primary px-4 align-middle text-text-primary" onclick={() => onselect(item)}>
 			{item.name}
+		</td>
+		<td class="border-b border-r border-border-primary px-4 align-middle">
+			<div class="relative flex h-8 w-full rounded">
+				{#each parseColors(item.background_colors) as color, i}
+					<span
+						class="group/swatch relative h-full flex-1"
+						class:rounded-l={i === 0}
+						class:rounded-r={i === parseColors(item.background_colors).length - 1}
+						style:background-color={color}
+					>
+						<span class="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-0.5 text-xs text-white opacity-0 transition-opacity group-hover/swatch:opacity-100">
+							{color}
+						</span>
+					</span>
+				{/each}
+			</div>
 		</td>
 		<td class="border-b border-r border-border-primary bg-fg p-0 text-center">
 			<button
