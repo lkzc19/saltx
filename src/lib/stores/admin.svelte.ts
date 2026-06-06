@@ -1,10 +1,12 @@
 import { writable, get } from 'svelte/store';
-import type { Music } from '$lib/types/music';
+import type { Music, Image } from '$lib/types/music';
 
 export const adminState = $state({
 	sidebarCollapsed: false,
 	selectedMusic: null as Music | null,
-	addingMusic: false
+	addingMusic: false,
+	selectedImage: null as Image | null,
+	addingImage: false
 });
 
 export const playerState = writable({
