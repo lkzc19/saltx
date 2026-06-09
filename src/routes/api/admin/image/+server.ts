@@ -9,7 +9,7 @@ function getExtension(filename: string): string {
 	return dot === -1 ? '' : filename.slice(dot + 1);
 }
 
-function normalizeBackgroundColor(value: string | null): string | null {
+function normalizeHex(value: string | null): string | null {
 	if (!value) return null;
 	const normalized = value.trim().toUpperCase();
 	return /^#[0-9A-F]{6}$/.test(normalized) ? normalized : null;
@@ -20,7 +20,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 
 	const name = formData.get('name')?.toString();
 	const aspectRatio = formData.get('aspect_ratio')?.toString() ?? '1:1';
-	const backgroundColor = normalizeBackgroundColor(formData.get('background_color')?.toString() ?? null);
+	const backgroundColor = normalizeHex(formData.get('background_color')?.toString() ?? null);
 	const file = formData.get('file') as File | null;
 
 	if (!file) {
@@ -31,17 +31,22 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 		return json({ error: '暂仅支持 1:1 比例' }, { status: 400 });
 	}
 
-	if (formData.has('background_color') && !backgroundColor) {
-		return json({ error: 'background_color 格式不正确，需为 HEX 色值' }, { status: 400 });
-	}
-
 	const fileName = name ?? file.name.replace(/\.[^/.]+$/, '');
 	const ext = getExtension(file.name);
 
 	const bucket = platform!.env.BUCKET;
 	const db = getDb(platform!.env.DB);
 
-	// 插入记录（file_key 存 R2 完整路径）
+	// 构建 background_colors
+	let backgroundColors = null;
+	if (backgroundColor) {
+		backgroundColors = JSON.stringify({
+			auto: [{ color: backgroundColor, algorithm: 'kmeans' }],
+			manual: [],
+			active: backgroundColor
+		});
+	}
+
 	const id = nanoid8();
 	const fileKey = `image/${id}.${ext}`;
 	const record = await db
@@ -52,13 +57,11 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			name: fileName,
 			extension: ext,
 			aspect_ratio: aspectRatio,
-			background_color: backgroundColor,
-			background_colors: backgroundColor ? JSON.stringify([backgroundColor]) : null
+			background_colors: backgroundColors
 		})
 		.returning()
 		.get();
 
-	// 上传原图到 R2
 	await bucket.put(fileKey, await file.arrayBuffer(), {
 		httpMetadata: { contentType: file.type }
 	});
@@ -85,7 +88,6 @@ export const PUT: RequestHandler = async ({ url, request, platform }) => {
 	const formData = await request.formData();
 	const name = formData.get('name')?.toString();
 	const aspectRatio = formData.get('aspect_ratio')?.toString();
-	const backgroundColor = normalizeBackgroundColor(formData.get('background_color')?.toString() ?? null);
 	const backgroundColorsRaw = formData.get('background_colors')?.toString();
 	const file = formData.get('file') as File | null;
 
@@ -100,16 +102,12 @@ export const PUT: RequestHandler = async ({ url, request, platform }) => {
 	const updates: Record<string, string | null> = {};
 	if (name) updates.name = name;
 	if (aspectRatio) updates.aspect_ratio = aspectRatio;
-	if (backgroundColor) updates.background_color = backgroundColor;
 
-	// 更新背景色列表
+	// 更新背景色
 	if (backgroundColorsRaw !== undefined) {
 		try {
-			const colors = JSON.parse(backgroundColorsRaw) as string[];
-			if (Array.isArray(colors) && colors.length > 0) {
-				updates.background_colors = JSON.stringify(colors);
-				updates.background_color = colors[0];
-			}
+			JSON.parse(backgroundColorsRaw); // 验证 JSON 格式
+			updates.background_colors = backgroundColorsRaw;
 		} catch {
 			// 忽略无效的 JSON
 		}
@@ -117,18 +115,15 @@ export const PUT: RequestHandler = async ({ url, request, platform }) => {
 
 	updates.updated_at = new Date().toISOString();
 
-	// 如果有新文件，替换原图
 	if (file) {
 		const bucket = platform!.env.BUCKET;
 		const ext = getExtension(file.name);
 		const newFileKey = `image/${id}.${ext}`;
 
-		// 删除旧文件
 		if (existing.file_key) {
 			await bucket.delete(existing.file_key);
 		}
 
-		// 上传新文件
 		await bucket.put(newFileKey, await file.arrayBuffer(), {
 			httpMetadata: { contentType: file.type }
 		});
@@ -156,7 +151,6 @@ export const DELETE: RequestHandler = async ({ url, platform }) => {
 	if (!existing) return json({ error: '图片不存在' }, { status: 404 });
 
 	const bucket = platform!.env.BUCKET;
-	// 删除原图
 	if (existing.file_key) {
 		await bucket.delete(existing.file_key);
 	}

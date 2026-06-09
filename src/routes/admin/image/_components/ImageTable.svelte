@@ -18,13 +18,20 @@
 		onadd: () => void;
 	} = $props();
 
-	function parseColors(raw: string | null): string[] {
-		if (!raw) return [];
-		try {
-			return JSON.parse(raw);
-		} catch {
-			return [];
-		}
+	interface BackgroundColors {
+		auto: { color: string; algorithm: string }[];
+		manual: string[];
+		active: string;
+	}
+
+	function parseBg(raw: string | null): BackgroundColors | null {
+		if (!raw) return null;
+		try { return JSON.parse(raw); } catch { return null; }
+	}
+
+	function allColors(bg: BackgroundColors | null): string[] {
+		if (!bg) return [];
+		return [...bg.auto.map((c) => c.color), ...bg.manual];
 	}
 
 	const columns = [
@@ -63,20 +70,27 @@
 			{item.name}
 		</td>
 		<td class="border-b border-r border-border-primary px-4 align-middle">
-			<div class="relative flex h-8 w-full rounded">
-				{#each parseColors(item.background_colors) as color, i}
-					<span
-						class="group/swatch relative h-full flex-1"
-						class:rounded-l={i === 0}
-						class:rounded-r={i === parseColors(item.background_colors).length - 1}
-						style:background-color={color}
-					>
-						<span class="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-0.5 text-xs text-white opacity-0 transition-opacity group-hover/swatch:opacity-100">
-							{color}
+			{#if allColors(parseBg(item.background_colors)).length > 0}
+				{@const bg = parseBg(item.background_colors)}
+				{@const colors = allColors(bg)}
+				<div class="relative flex h-8 w-full rounded">
+					{#each colors as color, i}
+						<span
+							class="group/swatch relative h-full flex-1"
+							class:rounded-l={i === 0}
+							class:rounded-r={i === colors.length - 1}
+							style:background-color={color}
+						>
+							{#if bg?.active === color}
+								<span class="absolute inset-0 border-2 border-white/60" class:rounded-l={i === 0} class:rounded-r={i === colors.length - 1}></span>
+							{/if}
+							<span class="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-0.5 text-xs text-white opacity-0 transition-opacity group-hover/swatch:opacity-100">
+								{color}
+							</span>
 						</span>
-					</span>
-				{/each}
-			</div>
+					{/each}
+				</div>
+			{/if}
 		</td>
 		<td class="border-b border-r border-border-primary bg-fg p-0 text-center">
 			<button

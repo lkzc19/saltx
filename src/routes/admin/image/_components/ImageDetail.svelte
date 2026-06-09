@@ -7,6 +7,7 @@
 	import { getMatchingBackgroundColor } from '$lib/utils/image-color';
 	import { adminState } from '$lib/stores/admin.svelte';
 	import Scrollbar from '$lib/components/Scrollbar.svelte';
+	import { Select } from 'bits-ui';
 
 	let {
 		image,
@@ -20,6 +21,9 @@
 		ondeleted: () => void;
 	} = $props();
 
+	interface ColorEntry { color: string; algorithm: string }
+	interface BgColors { auto: ColorEntry[]; manual: string[]; active: string }
+
 	let editing = $state(false);
 	let name = $state('');
 	let imageUrl = $state('');
@@ -32,8 +36,7 @@
 	let fileInput: HTMLInputElement | undefined = $state(undefined);
 	let cropOpen = $state(false);
 
-	// 背景色相关
-	let backgroundColors = $state<string[]>([]);
+	let bgColors = $state<BgColors>({ auto: [], manual: [], active: '' });
 	let samplingOpen = $state(false);
 	let hoveredColor = $state<string | null>(null);
 	let sampleCanvas: HTMLCanvasElement | undefined = $state(undefined);
@@ -44,10 +47,11 @@
 
 	let isAdding = $derived(adminState.addingImage);
 	let hasNewImage = $derived(!!imageUrl);
+	let viewBg = $derived(image ? parseBg(image.background_colors) : null);
 
-	function parseColors(raw: string | null): string[] {
-		if (!raw) return [];
-		try { return JSON.parse(raw); } catch { return []; }
+	function parseBg(raw: string | null): BgColors {
+		if (!raw) return { auto: [], manual: [], active: '' };
+		try { return JSON.parse(raw); } catch { return { auto: [], manual: [], active: '' }; }
 	}
 
 	function rgbToHex(r: number, g: number, b: number): string {
@@ -67,7 +71,7 @@
 		uploading = false;
 		error = '';
 		cropOpen = false;
-		backgroundColors = [];
+		bgColors = { auto: [], manual: [], active: '' };
 		samplingOpen = false;
 		hoveredColor = null;
 		if (fileInput) fileInput.value = '';
@@ -86,7 +90,7 @@
 		imageUrl = '';
 		stagingUrl = '';
 		croppedAreaPixels = null;
-		backgroundColors = parseColors(image.background_colors);
+		bgColors = parseBg(image.background_colors);
 		error = '';
 	}
 
@@ -96,7 +100,7 @@
 		imageUrl = '';
 		if (stagingUrl) URL.revokeObjectURL(stagingUrl);
 		stagingUrl = '';
-		backgroundColors = [];
+		bgColors = { auto: [], manual: [], active: '' };
 		samplingOpen = false;
 		hoveredColor = null;
 		error = '';
@@ -118,30 +122,29 @@
 	function confirmCrop() {
 		cropOpen = false;
 		if (!stagingUrl || !croppedAreaPixels) return;
-
 		const src = stagingUrl;
 		const px = croppedAreaPixels;
-		stagingUrl = "";
-
+		stagingUrl = '';
 		const img = new Image();
 		img.onload = () => {
-			const canvas = document.createElement("canvas");
+			const canvas = document.createElement('canvas');
 			canvas.width = px.width;
 			canvas.height = px.height;
-			const ctx = canvas.getContext("2d");
+			const ctx = canvas.getContext('2d');
 			if (!ctx) return;
 			ctx.drawImage(img, px.x, px.y, px.width, px.height, 0, 0, px.width, px.height);
-
 			canvas.toBlob((blob) => {
 				if (!blob) return;
 				if (imageUrl) URL.revokeObjectURL(imageUrl);
 				imageUrl = URL.createObjectURL(blob);
-				backgroundColors = [getMatchingBackgroundColor(canvas)];
+				const color = getMatchingBackgroundColor(canvas);
+				bgColors = { auto: [{ color, algorithm: 'kmeans' }], manual: [], active: color };
 				croppedAreaPixels = null;
-			}, "image/webp", 0.9);
+			}, 'image/webp', 0.9);
 		};
 		img.src = src;
 	}
+
 	function cancelCrop() {
 		cropOpen = false;
 		if (stagingUrl) URL.revokeObjectURL(stagingUrl);
@@ -155,7 +158,6 @@
 		croppedAreaPixels = e.pixels;
 	}
 
-	// 取色功能
 	function openSampling() {
 		samplingOpen = true;
 		hoveredColor = null;
@@ -182,47 +184,66 @@
 	function handleSamplingMouseMove(e: MouseEvent) {
 		if (!sampleCanvas) return;
 		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-		const relX = e.clientX - rect.left;
-		const relY = e.clientY - rect.top;
-		const x = Math.floor((relX / rect.width) * sampleCanvas.width);
-		const y = Math.floor((relY / rect.height) * sampleCanvas.height);
-
-		lensX = relX;
-		lensY = relY;
+		const x = Math.floor(((e.clientX - rect.left) / rect.width) * sampleCanvas.width);
+		const y = Math.floor(((e.clientY - rect.top) / rect.height) * sampleCanvas.height);
+		lensX = e.clientX - rect.left;
+		lensY = e.clientY - rect.top;
 		lensVisible = true;
-
 		const ctx = sampleCanvas.getContext('2d');
 		if (!ctx) return;
 		const pixel = ctx.getImageData(x, y, 1, 1).data;
 		hoveredColor = rgbToHex(pixel[0], pixel[1], pixel[2]);
-
-		// 绘制放大镜
 		if (magnifierCanvas) {
-			const mCtx = magnifierCanvas.getContext("2d");
+			const mCtx = magnifierCanvas.getContext('2d');
 			if (mCtx) {
-				const zoom = 8;
-				const pixels = 19;
-				const size = zoom * pixels;
-				mCtx.clearRect(0, 0, size, size);
+				const z = 8; const p = 19; const s = z * p;
+				mCtx.clearRect(0, 0, s, s);
 				mCtx.imageSmoothingEnabled = false;
-				mCtx.drawImage(
-					sampleCanvas,
-					x - (pixels - 1) / 2, y - (pixels - 1) / 2, pixels, pixels,
-					0, 0, size, size
-				);
+				mCtx.drawImage(sampleCanvas, x - (p - 1) / 2, y - (p - 1) / 2, p, p, 0, 0, s, s);
 			}
 		}
 	}
 
 	function handleSamplingClick() {
 		if (!hoveredColor) return;
-		if (!backgroundColors.includes(hoveredColor)) {
-			backgroundColors = [...backgroundColors, hoveredColor];
+		if (!bgColors.manual.includes(hoveredColor) && !bgColors.auto.some((c) => c.color === hoveredColor)) {
+			bgColors.manual = [...bgColors.manual, hoveredColor];
 		}
 	}
 
-	function removeColor(index: number) {
-		backgroundColors = backgroundColors.filter((_, i) => i !== index);
+	function removeManualColor(index: number) {
+		bgColors.manual = bgColors.manual.filter((_, i) => i !== index);
+	}
+
+	function setActiveColor(color: string) {
+		bgColors.active = color;
+	}
+
+	async function recalculate() {
+		if (!image || !imageUrl) return;
+		uploading = true;
+		try {
+			const img = new Image();
+			img.onload = async () => {
+				const canvas = document.createElement('canvas');
+				canvas.width = img.naturalWidth;
+				canvas.height = img.naturalHeight;
+				const ctx = canvas.getContext('2d');
+				if (!ctx) return;
+				ctx.drawImage(img, 0, 0);
+				const color = getMatchingBackgroundColor(canvas);
+				const res = await fetch(`/api/admin/image/recalculate?id=${image.id}`, {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ color })
+				});
+				if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '重新计算失败'); }
+				const updated = (await res.json()) as Image;
+				bgColors = parseBg(updated.background_colors);
+				onsaved();
+			};
+			img.src = imageUrl;
+		} catch (err) { error = (err as Error).message; } finally { uploading = false; }
 	}
 
 	async function generateFiles(): Promise<{ croppedFile: File; backgroundColor: string }> {
@@ -230,32 +251,17 @@
 			const img = new Image();
 			img.onload = () => {
 				const px = croppedAreaPixels;
-				const canvas = document.createElement("canvas");
-				if (px) {
-					canvas.width = px.width;
-					canvas.height = px.height;
-				} else {
-					canvas.width = img.naturalWidth;
-					canvas.height = img.naturalHeight;
-				}
-				const ctx = canvas.getContext("2d");
-				if (!ctx) return reject(new Error("canvas getContext failed"));
-				if (px) {
-					ctx.drawImage(img, px.x, px.y, px.width, px.height, 0, 0, px.width, px.height);
-				} else {
-					ctx.drawImage(img, 0, 0);
-				}
-				canvas.toBlob(
-					(blob) => {
-						if (!blob) return reject(new Error("canvas toBlob failed"));
-						resolve({
-							croppedFile: new File([blob], "image.webp", { type: "image/webp" }),
-							backgroundColor: getMatchingBackgroundColor(canvas)
-						});
-					},
-					"image/webp",
-					0.9
-				);
+				const canvas = document.createElement('canvas');
+				if (px) { canvas.width = px.width; canvas.height = px.height; }
+				else { canvas.width = img.naturalWidth; canvas.height = img.naturalHeight; }
+				const ctx = canvas.getContext('2d');
+				if (!ctx) return reject(new Error('canvas getContext failed'));
+				if (px) ctx.drawImage(img, px.x, px.y, px.width, px.height, 0, 0, px.width, px.height);
+				else ctx.drawImage(img, 0, 0);
+				canvas.toBlob((blob) => {
+					if (!blob) return reject(new Error('canvas toBlob failed'));
+					resolve({ croppedFile: new File([blob], 'image.webp', { type: 'image/webp' }), backgroundColor: getMatchingBackgroundColor(canvas) });
+				}, 'image/webp', 0.9);
 			};
 			img.onerror = reject;
 			img.src = imageUrl;
@@ -264,8 +270,7 @@
 
 	async function handleCreate() {
 		if (!imageUrl || uploading) return;
-		uploading = true;
-		error = '';
+		uploading = true; error = '';
 		try {
 			const { croppedFile, backgroundColor } = await generateFiles();
 			const formData = new FormData();
@@ -273,22 +278,19 @@
 			formData.set('file', croppedFile);
 			formData.set('aspect_ratio', '1:1');
 			formData.set('background_color', backgroundColor);
-			formData.set('background_colors', JSON.stringify([backgroundColor]));
 			const res = await fetch('/api/admin/image', { method: 'POST', body: formData });
 			if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '创建失败'); }
-			reset();
-			oncreated();
+			reset(); oncreated();
 		} catch (err) { error = (err as Error).message; } finally { uploading = false; }
 	}
 
 	async function handleSave() {
 		if (!image || uploading) return;
-		uploading = true;
-		error = '';
+		uploading = true; error = '';
 		try {
 			const formData = new FormData();
 			formData.set('name', name);
-			formData.set('background_colors', JSON.stringify(backgroundColors));
+			formData.set('background_colors', JSON.stringify(bgColors));
 			if (croppedAreaPixels && imageUrl) {
 				const { croppedFile, backgroundColor } = await generateFiles();
 				formData.set('file', croppedFile);
@@ -297,8 +299,7 @@
 			}
 			const res = await fetch(`/api/admin/image?id=${image.id}`, { method: 'PUT', body: formData });
 			if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '保存失败'); }
-			reset();
-			onsaved();
+			reset(); onsaved();
 		} catch (err) { error = (err as Error).message; } finally { uploading = false; }
 	}
 
@@ -315,9 +316,7 @@
 {#if image || isAdding}
 	<aside class="flex w-80 shrink-0 flex-col overflow-hidden border-l border-border-primary bg-fg">
 		<div class="flex items-center justify-between border-b border-border-primary px-4 py-4">
-			<h3 class="text-sm font-semibold text-text-primary">
-				{isAdding ? '上传图片' : editing ? '编辑图片' : '图片详情'}
-			</h3>
+			<h3 class="text-sm font-semibold text-text-primary">{isAdding ? '上传图片' : editing ? '编辑图片' : '图片详情'}</h3>
 			<button onclick={close} class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text-primary" aria-label="关闭">
 				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
 			</button>
@@ -341,25 +340,65 @@
 										<button type="button" onclick={() => fileInput?.click()} class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60">重新上传</button>
 									</div>
 								</div>
-							{/if}
-							{#if hasNewImage}
 								<button type="button" onclick={openSampling} class="w-full rounded-md border border-border-primary py-2 text-sm text-text-primary transition-colors hover:bg-border">取色</button>
-								{#if backgroundColors.length > 0}
-									<div>
+								{#if bgColors.auto.length > 0 || bgColors.manual.length > 0}
+									<div class="space-y-2">
 										<span class="text-xs text-text-disabled">背景色</span>
-										<div class="mt-2 flex h-8 w-full rounded">
-{#each backgroundColors as color, i}
-									{#if i === 0}
-										<span class="h-full flex-1" class:rounded-l={true} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color}></span>
-									{:else}
-										<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color} onclick={() => removeColor(i)} aria-label="移除 {color}">
-											<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
-												<svg class="h-3.5 w-3.5 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-											</span>
-										</button>
-									{/if}
-								{/each}
-										</div>
+										{#if bgColors.auto.length > 0}
+											<div>
+												<span class="text-[10px] text-text-disabled">自动</span>
+												<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
+													{#each bgColors.auto as entry, i}
+														<span class="h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.auto.length - 1} style:background-color={entry.color}></span>
+													{/each}
+												</div>
+											</div>
+										{/if}
+										{#if bgColors.manual.length > 0}
+											<div>
+												<span class="text-[10px] text-text-disabled">手动</span>
+												<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
+													{#each bgColors.manual as color, i}
+														<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.manual.length - 1} style:background-color={color} onclick={() => removeManualColor(i)} aria-label={"移除 " + color}>
+															<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
+																<svg class="h-3 w-3 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+															</span>
+														</button>
+													{/each}
+												</div>
+											</div>
+										{/if}
+									</div>
+									<div>
+										<label for="add-active-color" class="mb-1.5 block text-xs text-text-disabled">使用颜色</label>
+										<Select.Root type="single" value={bgColors.active} onValueChange={(v) => { if (v) setActiveColor(v); }}>
+											<Select.Trigger class="flex h-9 w-full items-center gap-2 rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none">
+							{#if bgColors.active}
+								<span class="inline-block h-4 w-4 shrink-0 rounded-sm border border-border-primary" style:background-color={bgColors.active}></span>
+								<span class="truncate">{bgColors.auto.find((e) => e.color === bgColors.active) ? "自动" : "手动"} - {bgColors.active}</span>
+							{:else}
+								<span class="text-text-disabled">选择颜色</span>
+							{/if}
+											<svg class="ml-auto h-4 w-4 shrink-0 text-text-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" /></svg></Select.Trigger>
+											<Select.Portal>
+												<Select.Content class="z-50 max-h-60 overflow-hidden rounded-md border border-border-primary bg-fg shadow-lg" style="width: var(--bits-floating-anchor-width)">
+													<Select.Viewport class="p-1">
+														{#each bgColors.auto as entry}
+															<Select.Item value={entry.color} label={"自动 - " + entry.color} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-text-primary outline-none data-[highlighted]:bg-bg-secondary-hover">
+																<span class="inline-block h-4 w-4 rounded-sm border border-border-primary" style:background-color={entry.color}></span>
+																自动 - {entry.color}
+															</Select.Item>
+														{/each}
+														{#each bgColors.manual as color}
+															<Select.Item value={color} label={"手动 - " + color} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-text-primary outline-none data-[highlighted]:bg-bg-secondary-hover">
+																<span class="inline-block h-4 w-4 rounded-sm border border-border-primary" style:background-color={color}></span>
+																手动 - {color}
+															</Select.Item>
+														{/each}
+													</Select.Viewport>
+												</Select.Content>
+											</Select.Portal>
+										</Select.Root>
 									</div>
 								{/if}
 							{/if}
@@ -382,28 +421,68 @@
 									<button type="button" onclick={() => fileInput?.click()} class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60">重新上传</button>
 								</div>
 							</div>
-
 							<button type="button" onclick={openSampling} class="w-full rounded-md border border-border-primary py-2 text-sm text-text-primary transition-colors hover:bg-border">取色</button>
-
-							{#if backgroundColors.length > 0}
-								<div>
+							<button type="button" onclick={recalculate} class="w-full rounded-md border border-border-primary py-2 text-sm text-text-primary transition-colors hover:bg-border">重新计算</button>
+							{#if bgColors.auto.length > 0 || bgColors.manual.length > 0}
+								<div class="space-y-2">
 									<span class="text-xs text-text-disabled">背景色</span>
-									<div class="mt-2 flex h-8 w-full rounded">
-{#each backgroundColors as color, i}
-									{#if i === 0}
-										<span class="h-full flex-1" class:rounded-l={true} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color}></span>
-									{:else}
-										<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color} onclick={() => removeColor(i)} aria-label="移除 {color}">
-											<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
-												<svg class="h-3.5 w-3.5 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-											</span>
-										</button>
+									{#if bgColors.auto.length > 0}
+										<div>
+											<span class="text-[10px] text-text-disabled">自动</span>
+											<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
+												{#each bgColors.auto as entry, i}
+													<span class="h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.auto.length - 1} style:background-color={entry.color}></span>
+												{/each}
+											</div>
+										</div>
 									{/if}
-								{/each}
-									</div>
+									{#if bgColors.manual.length > 0}
+										<div>
+											<span class="text-[10px] text-text-disabled">手动</span>
+											<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
+												{#each bgColors.manual as color, i}
+													<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.manual.length - 1} style:background-color={color} onclick={() => removeManualColor(i)} aria-label={"移除 " + color}>
+														<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
+															<svg class="h-3 w-3 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+														</span>
+													</button>
+												{/each}
+											</div>
+										</div>
+									{/if}
+								</div>
+								<div>
+									<label for="active-color" class="mb-1.5 block text-xs text-text-disabled">使用颜色</label>
+									<Select.Root type="single" value={bgColors.active} onValueChange={(v) => { if (v) setActiveColor(v); }}>
+										<Select.Trigger class="flex h-9 w-full items-center gap-2 rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none">
+							{#if bgColors.active}
+								<span class="inline-block h-4 w-4 shrink-0 rounded-sm border border-border-primary" style:background-color={bgColors.active}></span>
+								<span class="truncate">{bgColors.auto.find((e) => e.color === bgColors.active) ? "自动" : "手动"} - {bgColors.active}</span>
+							{:else}
+								<span class="text-text-disabled">选择颜色</span>
+							{/if}
+										<svg class="ml-auto h-4 w-4 shrink-0 text-text-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" /></svg></Select.Trigger>
+										<Select.Portal>
+											<Select.Content class="z-50 max-h-60 overflow-hidden rounded-md border border-border-primary bg-fg shadow-lg" style="width: var(--bits-floating-anchor-width)">
+												<Select.Viewport class="p-1">
+													{#each bgColors.auto as entry}
+														<Select.Item value={entry.color} label={"自动 - " + entry.color} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-text-primary outline-none data-[highlighted]:bg-bg-secondary-hover">
+															<span class="inline-block h-4 w-4 rounded-sm border border-border-primary" style:background-color={entry.color}></span>
+															自动 - {entry.color}
+														</Select.Item>
+													{/each}
+													{#each bgColors.manual as color}
+														<Select.Item value={color} label={"手动 - " + color} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-text-primary outline-none data-[highlighted]:bg-bg-secondary-hover">
+															<span class="inline-block h-4 w-4 rounded-sm border border-border-primary" style:background-color={color}></span>
+															手动 - {color}
+														</Select.Item>
+													{/each}
+												</Select.Viewport>
+											</Select.Content>
+										</Select.Portal>
+									</Select.Root>
 								</div>
 							{/if}
-
 							<div>
 								<label for="edit-image-name" class="mb-1.5 block text-xs text-text-disabled">名称</label>
 								<input id="edit-image-name" type="text" bind:value={name} placeholder="图片名称" class="h-9 w-full rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-colors focus:border-primary" />
@@ -417,18 +496,29 @@
 								<img src={getR2Url(image.file_key)} alt={image.name} class="h-full w-full object-cover" />
 							</div>
 							<div><span class="text-xs text-text-disabled">名称</span><p class="mt-1 text-sm text-text-primary">{image.name}</p></div>
-							<div><span class="text-xs text-text-disabled">格式</span><p class="mt-1 text-sm text-text-primary">{image.extension.toUpperCase()}</p></div>
-							<div><span class="text-xs text-text-disabled">比例</span><p class="mt-1 text-sm text-text-primary">{image.aspect_ratio}</p></div>
-							{#if parseColors(image.background_colors).length > 0}
-								<div>
+							{#if viewBg && (viewBg.auto.length > 0 || viewBg.manual.length > 0)}
+								<div class="space-y-2">
 									<span class="text-xs text-text-disabled">背景色</span>
-									<div class="mt-2 flex h-8 w-full rounded">
-										{#each parseColors(image.background_colors) as color, i}
-											<span class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === parseColors(image.background_colors).length - 1} style:background-color={color}>
-												<span class="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-0.5 text-xs text-white opacity-0 transition-opacity group-hover/swatch:opacity-100">{color}</span>
-											</span>
-										{/each}
-									</div>
+									{#if viewBg.auto.length > 0}
+										<div>
+											<span class="text-[10px] text-text-disabled">自动</span>
+											<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
+												{#each viewBg.auto as entry, i}
+													<span class="h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === viewBg.auto.length - 1} style:background-color={entry.color}></span>
+												{/each}
+											</div>
+										</div>
+									{/if}
+									{#if viewBg.manual.length > 0}
+										<div>
+											<span class="text-[10px] text-text-disabled">手动</span>
+											<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
+												{#each viewBg.manual as color, i}
+													<span class="h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === viewBg.manual.length - 1} style:background-color={color}></span>
+												{/each}
+											</div>
+										</div>
+									{/if}
 								</div>
 							{/if}
 							<div><span class="text-xs text-text-disabled">创建时间</span><p class="mt-1 text-xs text-text-disabled">{formatDate(image.created_at)}</p></div>
@@ -473,9 +563,8 @@
 	</aside>
 {/if}
 
-<!-- 裁剪模态框 -->
 {#if cropOpen}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
 	<div class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
 		<div class="flex min-h-0 w-full max-w-2xl flex-1 items-center justify-center px-6 py-4">
 			<div class="relative aspect-square w-full overflow-hidden bg-black">
@@ -489,11 +578,10 @@
 	</div>
 {/if}
 
-<!-- 取色模态框 -->
 {#if samplingOpen}
 	<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-		onclick={closeSampling} onkeydown={(e) => e.key === "Escape" && closeSampling()}>
+		onclick={closeSampling} onkeydown={(e) => e.key === 'Escape' && closeSampling()}>
 		<div class="flex w-full max-w-2xl flex-col overflow-hidden bg-fg shadow-2xl"
 			onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 			<div class="flex items-center justify-between border-b border-border-primary px-4 py-3">
@@ -528,20 +616,12 @@
 					</div>
 				{/if}
 			</div>
-			{#if backgroundColors.length > 0}
+			{#if bgColors.manual.length > 0}
 				<div class="border-t border-border-primary p-4">
-					<div class="flex h-8 w-full rounded">
-{#each backgroundColors as color, i}
-									{#if i === 0}
-										<span class="h-full flex-1" class:rounded-l={true} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color}></span>
-									{:else}
-										<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === backgroundColors.length - 1} style:background-color={color} onclick={() => removeColor(i)} aria-label="移除 {color}">
-											<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
-												<svg class="h-3.5 w-3.5 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-											</span>
-										</button>
-									{/if}
-								{/each}
+					<div class="flex h-8 w-full rounded overflow-hidden">
+						{#each bgColors.manual as color, i}
+							<span class="h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.manual.length - 1} style:background-color={color}></span>
+						{/each}
 					</div>
 				</div>
 			{/if}
@@ -550,45 +630,9 @@
 {/if}
 
 <style>
-	.magnifier {
-		position: relative;
-		width: 152px;
-		height: 152px;
-		overflow: hidden;
-		border: 1px solid rgba(255, 255, 255, 0.4);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-	}
-
-	.magnifier-crosshair-v,
-	.magnifier-crosshair-h {
-		position: absolute;
-		pointer-events: none;
-	}
-
-	.magnifier-crosshair-v {
-		left: 72px;
-		top: 0;
-		width: 8px;
-		height: 100%;
-		background: rgba(255, 255, 255, 0.35);
-	}
-
-	.magnifier-crosshair-h {
-		top: 72px;
-		left: 0;
-		height: 8px;
-		width: 100%;
-		background: rgba(255, 255, 255, 0.35);
-	}
-
-	.magnifier-center {
-		position: absolute;
-		left: 76px;
-		top: 76px;
-		width: 8px;
-		height: 8px;
-		transform: translate(-50%, -50%);
-		border: 1.5px solid rgba(255, 255, 255, 0.8);
-		pointer-events: none;
-	}
+	.magnifier { position: relative; width: 152px; height: 152px; overflow: hidden; border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+	.magnifier-crosshair-v, .magnifier-crosshair-h { position: absolute; pointer-events: none; }
+	.magnifier-crosshair-v { left: 72px; top: 0; width: 8px; height: 100%; background: rgba(255,255,255,0.35); }
+	.magnifier-crosshair-h { top: 72px; left: 0; height: 8px; width: 100%; background: rgba(255,255,255,0.35); }
+	.magnifier-center { position: absolute; left: 76px; top: 76px; width: 8px; height: 8px; transform: translate(-50%,-50%); border: 1.5px solid rgba(255,255,255,0.8); pointer-events: none; }
 </style>

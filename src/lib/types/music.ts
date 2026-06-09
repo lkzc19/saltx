@@ -15,7 +15,6 @@ export interface Image {
 	name: string;
 	extension: string;
 	aspect_ratio: string;
-	background_color: string | null;
 	background_colors: string | null;
 	created_at: string;
 	updated_at: string;
