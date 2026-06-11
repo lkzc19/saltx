@@ -10,15 +10,9 @@
 	import { Select } from 'bits-ui';
 
 	let {
-		image,
-		oncreated,
-		onsaved,
-		ondeleted
+		image, oncreated, onsaved, ondeleted
 	}: {
-		image: Image | null;
-		oncreated: () => void;
-		onsaved: () => void;
-		ondeleted: () => void;
+		image: Image | null; oncreated: () => void; onsaved: () => void; ondeleted: () => void;
 	} = $props();
 
 	interface ColorEntry { color: string; algorithm: string }
@@ -59,51 +53,30 @@
 	}
 
 	export function reset() {
-		editing = false;
-		name = '';
-		if (imageUrl) URL.revokeObjectURL(imageUrl);
-		imageUrl = '';
-		if (stagingUrl) URL.revokeObjectURL(stagingUrl);
-		stagingUrl = '';
-		crop = { x: 0, y: 0 };
-		zoom = 1;
-		croppedAreaPixels = null;
-		uploading = false;
-		error = '';
-		cropOpen = false;
+		editing = false; name = '';
+		if (imageUrl) URL.revokeObjectURL(imageUrl); imageUrl = '';
+		if (stagingUrl) URL.revokeObjectURL(stagingUrl); stagingUrl = '';
+		crop = { x: 0, y: 0 }; zoom = 1; croppedAreaPixels = null;
+		uploading = false; error = ''; cropOpen = false;
 		bgColors = { auto: [], manual: [], active: '' };
-		samplingOpen = false;
-		hoveredColor = null;
+		samplingOpen = false; hoveredColor = null;
 		if (fileInput) fileInput.value = '';
 	}
 
-	function close() {
-		adminState.addingImage = false;
-		adminState.selectedImage = null;
-		reset();
-	}
+	function close() { adminState.addingImage = false; adminState.selectedImage = null; reset(); }
 
 	function startEdit() {
 		if (!image) return;
-		editing = true;
-		name = image.name;
-		imageUrl = '';
-		stagingUrl = '';
-		croppedAreaPixels = null;
-		bgColors = parseBg(image.background_colors);
-		error = '';
+		editing = true; name = image.name; imageUrl = ''; stagingUrl = '';
+		croppedAreaPixels = null; bgColors = parseBg(image.background_colors); error = '';
 	}
 
 	function cancelEdit() {
 		editing = false;
-		if (imageUrl) URL.revokeObjectURL(imageUrl);
-		imageUrl = '';
-		if (stagingUrl) URL.revokeObjectURL(stagingUrl);
-		stagingUrl = '';
+		if (imageUrl) URL.revokeObjectURL(imageUrl); imageUrl = '';
+		if (stagingUrl) URL.revokeObjectURL(stagingUrl); stagingUrl = '';
 		bgColors = { auto: [], manual: [], active: '' };
-		samplingOpen = false;
-		hoveredColor = null;
-		error = '';
+		samplingOpen = false; hoveredColor = null; error = '';
 		if (fileInput) fileInput.value = '';
 	}
 
@@ -113,23 +86,17 @@
 		if (!editing && !imageUrl) name = f.name.replace(/\.[^/.]+$/, '');
 		if (stagingUrl) URL.revokeObjectURL(stagingUrl);
 		stagingUrl = URL.createObjectURL(f);
-		crop = { x: 0, y: 0 };
-		zoom = 1;
-		croppedAreaPixels = null;
-		cropOpen = true;
+		crop = { x: 0, y: 0 }; zoom = 1; croppedAreaPixels = null; cropOpen = true;
 	}
 
 	function confirmCrop() {
 		cropOpen = false;
 		if (!stagingUrl || !croppedAreaPixels) return;
-		const src = stagingUrl;
-		const px = croppedAreaPixels;
-		stagingUrl = '';
+		const src = stagingUrl; const px = croppedAreaPixels; stagingUrl = '';
 		const img = new Image();
 		img.onload = () => {
 			const canvas = document.createElement('canvas');
-			canvas.width = px.width;
-			canvas.height = px.height;
+			canvas.width = px.width; canvas.height = px.height;
 			const ctx = canvas.getContext('2d');
 			if (!ctx) return;
 			ctx.drawImage(img, px.x, px.y, px.width, px.height, 0, 0, px.width, px.height);
@@ -137,8 +104,7 @@
 				if (!blob) return;
 				if (imageUrl) URL.revokeObjectURL(imageUrl);
 				imageUrl = URL.createObjectURL(blob);
-				const color = getMatchingBackgroundColor(canvas);
-				bgColors = { auto: [{ color, algorithm: 'kmeans' }], manual: [], active: color };
+				bgColors = { auto: [{ color: getMatchingBackgroundColor(canvas), algorithm: 'kmeans' }], manual: [], active: getMatchingBackgroundColor(canvas) };
 				croppedAreaPixels = null;
 			}, 'image/webp', 0.9);
 		};
@@ -147,48 +113,36 @@
 
 	function cancelCrop() {
 		cropOpen = false;
-		if (stagingUrl) URL.revokeObjectURL(stagingUrl);
-		stagingUrl = '';
+		if (stagingUrl) URL.revokeObjectURL(stagingUrl); stagingUrl = '';
 		croppedAreaPixels = null;
 		if (!imageUrl && !editing) name = '';
 		if (fileInput) fileInput.value = '';
 	}
 
-	function handleCropComplete(e: { pixels: CropArea }) {
-		croppedAreaPixels = e.pixels;
-	}
+	function handleCropComplete(e: { pixels: CropArea }) { croppedAreaPixels = e.pixels; }
 
 	function openSampling() {
-		samplingOpen = true;
-		hoveredColor = null;
+		samplingOpen = true; hoveredColor = null;
 		const imgSrc = imageUrl || (image ? getR2Url(image.file_key) : '');
 		if (!imgSrc || !sampleCanvas) return;
-		const img = new Image();
-		img.crossOrigin = 'anonymous';
+		const img = new Image(); img.crossOrigin = 'anonymous';
 		img.onload = () => {
 			if (!sampleCanvas) return;
-			sampleCanvas.width = img.naturalWidth;
-			sampleCanvas.height = img.naturalHeight;
+			sampleCanvas.width = img.naturalWidth; sampleCanvas.height = img.naturalHeight;
 			const ctx = sampleCanvas.getContext('2d');
 			if (ctx) ctx.drawImage(img, 0, 0);
 		};
 		img.src = imgSrc;
 	}
 
-	function closeSampling() {
-		samplingOpen = false;
-		hoveredColor = null;
-		lensVisible = false;
-	}
+	function closeSampling() { samplingOpen = false; hoveredColor = null; lensVisible = false; }
 
 	function handleSamplingMouseMove(e: MouseEvent) {
 		if (!sampleCanvas) return;
 		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
 		const x = Math.floor(((e.clientX - rect.left) / rect.width) * sampleCanvas.width);
 		const y = Math.floor(((e.clientY - rect.top) / rect.height) * sampleCanvas.height);
-		lensX = e.clientX - rect.left;
-		lensY = e.clientY - rect.top;
-		lensVisible = true;
+		lensX = e.clientX - rect.left; lensY = e.clientY - rect.top; lensVisible = true;
 		const ctx = sampleCanvas.getContext('2d');
 		if (!ctx) return;
 		const pixel = ctx.getImageData(x, y, 1, 1).data;
@@ -196,9 +150,8 @@
 		if (magnifierCanvas) {
 			const mCtx = magnifierCanvas.getContext('2d');
 			if (mCtx) {
-				const z = 8; const p = 19; const s = z * p;
-				mCtx.clearRect(0, 0, s, s);
-				mCtx.imageSmoothingEnabled = false;
+				const z = 8, p = 19, s = z * p;
+				mCtx.clearRect(0, 0, s, s); mCtx.imageSmoothingEnabled = false;
 				mCtx.drawImage(sampleCanvas, x - (p - 1) / 2, y - (p - 1) / 2, p, p, 0, 0, s, s);
 			}
 		}
@@ -211,13 +164,8 @@
 		}
 	}
 
-	function removeManualColor(index: number) {
-		bgColors.manual = bgColors.manual.filter((_, i) => i !== index);
-	}
-
-	function setActiveColor(color: string) {
-		bgColors.active = color;
-	}
+	function removeManualColor(index: number) { bgColors.manual = bgColors.manual.filter((_, i) => i !== index); }
+	function setActiveColor(color: string) { bgColors.active = color; }
 
 	async function recalculate() {
 		if (!image || !imageUrl) return;
@@ -226,21 +174,14 @@
 			const img = new Image();
 			img.onload = async () => {
 				const canvas = document.createElement('canvas');
-				canvas.width = img.naturalWidth;
-				canvas.height = img.naturalHeight;
+				canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
 				const ctx = canvas.getContext('2d');
 				if (!ctx) return;
 				ctx.drawImage(img, 0, 0);
 				const color = getMatchingBackgroundColor(canvas);
-				const res = await fetch(`/api/admin/image/recalculate?id=${image.id}`, {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ color })
-				});
+				const res = await fetch(`/api/admin/image/recalculate?id=${image.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ color }) });
 				if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '重新计算失败'); }
-				const updated = (await res.json()) as Image;
-				bgColors = parseBg(updated.background_colors);
-				onsaved();
+				bgColors = parseBg((await res.json() as Image).background_colors); onsaved();
 			};
 			img.src = imageUrl;
 		} catch (err) { error = (err as Error).message; } finally { uploading = false; }
@@ -263,8 +204,7 @@
 					resolve({ croppedFile: new File([blob], 'image.webp', { type: 'image/webp' }), backgroundColor: getMatchingBackgroundColor(canvas) });
 				}, 'image/webp', 0.9);
 			};
-			img.onerror = reject;
-			img.src = imageUrl;
+			img.onerror = reject; img.src = imageUrl;
 		});
 	}
 
@@ -275,9 +215,7 @@
 			const { croppedFile, backgroundColor } = await generateFiles();
 			const formData = new FormData();
 			if (name) formData.set('name', name);
-			formData.set('file', croppedFile);
-			formData.set('aspect_ratio', '1:1');
-			formData.set('background_color', backgroundColor);
+			formData.set('file', croppedFile); formData.set('aspect_ratio', '1:1'); formData.set('background_color', backgroundColor);
 			const res = await fetch('/api/admin/image', { method: 'POST', body: formData });
 			if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '创建失败'); }
 			reset(); oncreated();
@@ -289,13 +227,10 @@
 		uploading = true; error = '';
 		try {
 			const formData = new FormData();
-			formData.set('name', name);
-			formData.set('background_colors', JSON.stringify(bgColors));
+			formData.set('name', name); formData.set('background_colors', JSON.stringify(bgColors));
 			if (croppedAreaPixels && imageUrl) {
 				const { croppedFile, backgroundColor } = await generateFiles();
-				formData.set('file', croppedFile);
-				formData.set('aspect_ratio', '1:1');
-				formData.set('background_color', backgroundColor);
+				formData.set('file', croppedFile); formData.set('aspect_ratio', '1:1'); formData.set('background_color', backgroundColor);
 			}
 			const res = await fetch(`/api/admin/image?id=${image.id}`, { method: 'PUT', body: formData });
 			if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '保存失败'); }
@@ -315,6 +250,7 @@
 
 {#if image || isAdding}
 	<aside class="flex w-80 shrink-0 flex-col overflow-hidden border-l border-border-primary bg-fg">
+		<!-- Header -->
 		<div class="flex items-center justify-between border-b border-border-primary px-4 py-4">
 			<h3 class="text-sm font-semibold text-text-primary">{isAdding ? '上传图片' : editing ? '编辑图片' : '图片详情'}</h3>
 			<button onclick={close} class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text-primary" aria-label="关闭">
@@ -322,8 +258,9 @@
 			</button>
 		</div>
 
-		<div class="min-h-0 flex flex-1 flex-col">
-			<Scrollbar class="min-h-0 flex-1">
+		<!-- 内容区 -->
+		<div class="flex flex-1 flex-col min-h-0">
+			<Scrollbar class="flex-1 min-h-0">
 				<div class="p-4">
 					{#if isAdding}
 						<div class="space-y-4">
@@ -373,13 +310,14 @@
 										<label for="add-active-color" class="mb-1.5 block text-xs text-text-disabled">使用颜色</label>
 										<Select.Root type="single" value={bgColors.active} onValueChange={(v) => { if (v) setActiveColor(v); }}>
 											<Select.Trigger class="flex h-9 w-full items-center gap-2 rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none">
-							{#if bgColors.active}
-								<span class="inline-block h-4 w-4 shrink-0 rounded-sm border border-border-primary" style:background-color={bgColors.active}></span>
-								<span class="truncate">{bgColors.auto.find((e) => e.color === bgColors.active) ? "自动" : "手动"} - {bgColors.active}</span>
-							{:else}
-								<span class="text-text-disabled">选择颜色</span>
-							{/if}
-											<svg class="ml-auto h-4 w-4 shrink-0 text-text-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" /></svg></Select.Trigger>
+												{#if bgColors.active}
+													<span class="inline-block h-4 w-4 shrink-0 rounded-sm border border-border-primary" style:background-color={bgColors.active}></span>
+													<span class="truncate">{bgColors.auto.find((e) => e.color === bgColors.active) ? "自动" : "手动"} - {bgColors.active}</span>
+												{:else}
+													<span class="text-text-disabled">选择颜色</span>
+												{/if}
+												<svg class="ml-auto h-4 w-4 shrink-0 text-text-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" /></svg>
+											</Select.Trigger>
 											<Select.Portal>
 												<Select.Content class="z-50 max-h-60 overflow-hidden rounded-md border border-border-primary bg-fg shadow-lg" style="width: var(--bits-floating-anchor-width)">
 													<Select.Viewport class="p-1">
@@ -455,13 +393,14 @@
 									<label for="active-color" class="mb-1.5 block text-xs text-text-disabled">使用颜色</label>
 									<Select.Root type="single" value={bgColors.active} onValueChange={(v) => { if (v) setActiveColor(v); }}>
 										<Select.Trigger class="flex h-9 w-full items-center gap-2 rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none">
-							{#if bgColors.active}
-								<span class="inline-block h-4 w-4 shrink-0 rounded-sm border border-border-primary" style:background-color={bgColors.active}></span>
-								<span class="truncate">{bgColors.auto.find((e) => e.color === bgColors.active) ? "自动" : "手动"} - {bgColors.active}</span>
-							{:else}
-								<span class="text-text-disabled">选择颜色</span>
-							{/if}
-										<svg class="ml-auto h-4 w-4 shrink-0 text-text-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" /></svg></Select.Trigger>
+											{#if bgColors.active}
+												<span class="inline-block h-4 w-4 shrink-0 rounded-sm border border-border-primary" style:background-color={bgColors.active}></span>
+												<span class="truncate">{bgColors.auto.find((e) => e.color === bgColors.active) ? "自动" : "手动"} - {bgColors.active}</span>
+											{:else}
+												<span class="text-text-disabled">选择颜色</span>
+											{/if}
+											<svg class="ml-auto h-4 w-4 shrink-0 text-text-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" /></svg>
+										</Select.Trigger>
 										<Select.Portal>
 											<Select.Content class="z-50 max-h-60 overflow-hidden rounded-md border border-border-primary bg-fg shadow-lg" style="width: var(--bits-floating-anchor-width)">
 												<Select.Viewport class="p-1">
@@ -504,7 +443,9 @@
 											<span class="text-[10px] text-text-disabled">自动</span>
 											<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
 												{#each viewBg.auto as entry, i}
-													<span class="h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === viewBg.auto.length - 1} style:background-color={entry.color}></span>
+													<span class="relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === viewBg.auto.length - 1} style:background-color={entry.color}>
+														{#if viewBg.active === entry.color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
+													</span>
 												{/each}
 											</div>
 										</div>
@@ -514,7 +455,9 @@
 											<span class="text-[10px] text-text-disabled">手动</span>
 											<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
 												{#each viewBg.manual as color, i}
-													<span class="h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === viewBg.manual.length - 1} style:background-color={color}></span>
+													<span class="relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === viewBg.manual.length - 1} style:background-color={color}>
+														{#if viewBg.active === color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
+													</span>
 												{/each}
 											</div>
 										</div>
@@ -528,6 +471,7 @@
 				</div>
 			</Scrollbar>
 
+			<!-- 按钮区 -->
 			<div class="flex min-h-18 items-center border-t border-border-primary px-4">
 				{#if isAdding}
 					<div class="flex w-full gap-2">

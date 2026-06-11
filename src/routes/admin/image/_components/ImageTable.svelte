@@ -82,7 +82,7 @@
 							style:background-color={color}
 						>
 							{#if bg?.active === color}
-								<span class="absolute inset-0 border-2 border-white/60" class:rounded-l={i === 0} class:rounded-r={i === colors.length - 1}></span>
+								<span class="absolute inset-0 border-2 border-black" class:rounded-l={i === 0} class:rounded-r={i === colors.length - 1}></span>
 							{/if}
 							<span class="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-0.5 text-xs text-white opacity-0 transition-opacity group-hover/swatch:opacity-100">
 								{color}
