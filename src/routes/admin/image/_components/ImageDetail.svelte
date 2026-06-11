@@ -286,7 +286,8 @@
 												<span class="text-[10px] text-text-disabled">自动</span>
 												<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
 													{#each bgColors.auto as entry, i}
-														<span class="h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.auto.length - 1} style:background-color={entry.color}></span>
+						{#if bgColors.active === entry.color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
+														<span class="relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.auto.length - 1} style:background-color={entry.color}></span>
 													{/each}
 												</div>
 											</div>
@@ -300,6 +301,7 @@
 															<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
 																<svg class="h-3 w-3 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
 															</span>
+						{#if bgColors.active === color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
 														</button>
 													{/each}
 												</div>
@@ -369,6 +371,7 @@
 											<span class="text-[10px] text-text-disabled">自动</span>
 											<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
 												{#each bgColors.auto as entry, i}
+									{#if bgColors.active === entry.color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
 													<span class="h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.auto.length - 1} style:background-color={entry.color}></span>
 												{/each}
 											</div>
@@ -383,6 +386,7 @@
 														<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
 															<svg class="h-3 w-3 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
 														</span>
+								{#if bgColors.active === color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
 													</button>
 												{/each}
 											</div>
