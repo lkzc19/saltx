@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Image } from '$lib/types/music';
 	import { getR2Url } from '$lib/utils/music';
+	import { parseBgColors, type BgColors } from "$lib/utils/image";
 	import DataTable from '$lib/components/DataTable.svelte';
 	import { Plus, Trash } from '@lucide/svelte';
 
@@ -18,21 +19,13 @@
 		onadd: () => void;
 	} = $props();
 
-	interface BackgroundColors {
-		auto: { color: string; algorithm: string }[];
-		manual: string[];
-		active: string;
-	}
+	const parseBg = parseBgColors;
 
-	function parseBg(raw: string | null): BackgroundColors | null {
-		if (!raw) return null;
-		try { return JSON.parse(raw); } catch { return null; }
-	}
-
-	function allColors(bg: BackgroundColors | null): string[] {
+	function allColors(bg: BgColors | null): string[] {
 		if (!bg) return [];
 		return [...bg.auto.map((c) => c.color), ...bg.manual];
 	}
+
 
 	const columns = [
 		{ header: '', width: '2.5rem' },

@@ -8,6 +8,7 @@
 	import { adminState } from '$lib/stores/admin.svelte';
 	import Scrollbar from '$lib/components/Scrollbar.svelte';
 	import { Select } from 'bits-ui';
+	import { parseBgColors, type BgColors } from "$lib/utils/image";
 
 	let {
 		image, oncreated, onsaved, ondeleted
@@ -15,8 +16,6 @@
 		image: Image | null; oncreated: () => void; onsaved: () => void; ondeleted: () => void;
 	} = $props();
 
-	interface ColorEntry { color: string; algorithm: string }
-	interface BgColors { auto: ColorEntry[]; manual: string[]; active: string }
 
 	let editing = $state(false);
 	let editingImage: Image | null = $state(null);
@@ -44,12 +43,9 @@
 
 	let isAdding = $derived(adminState.addingImage);
 	let hasNewImage = $derived(!!imageUrl);
+	const parseBg = parseBgColors;
 	let viewBg = $derived(image ? parseBg(image.background_colors) : null);
 
-	function parseBg(raw: string | null): BgColors {
-		if (!raw) return { auto: [], manual: [], active: '' };
-		try { return JSON.parse(raw); } catch { return { auto: [], manual: [], active: '' }; }
-	}
 
 	function rgbToHex(r: number, g: number, b: number): string {
 		return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase();
@@ -223,7 +219,7 @@
 			const { croppedFile, backgroundColor } = await generateFiles();
 			const formData = new FormData();
 			if (name) formData.set('name', name);
-			formData.set('file', croppedFile); formData.set('aspect_ratio', '1:1'); formData.set('background_color', backgroundColor);
+			formData.set('file', croppedFile); formData.set("aspect_ratio", "1:1");
 			const res = await fetch('/api/admin/image', { method: 'POST', body: formData });
 			if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '创建失败'); }
 			reset(); oncreated();
@@ -238,7 +234,7 @@
 			formData.set('name', name); formData.set('background_colors', JSON.stringify(bgColors));
 			if (croppedAreaPixels && imageUrl) {
 				const { croppedFile, backgroundColor } = await generateFiles();
-				formData.set('file', croppedFile); formData.set('aspect_ratio', '1:1'); formData.set('background_color', backgroundColor);
+				formData.set('file', croppedFile); formData.set("aspect_ratio", "1:1");
 			}
 			const res = await fetch(`/api/admin/image?id=${editingImage.id}`, { method: 'PUT', body: formData });
 			if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '保存失败'); }

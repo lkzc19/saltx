@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Music } from '$lib/types/music';
+	import { getR2Url } from '$lib/utils/music';
 	import DataTable from '$lib/components/DataTable.svelte';
 	import { Play, Pause, Plus } from '@lucide/svelte';
 
@@ -49,7 +50,7 @@
 		<td class="border-b border-r border-border-primary px-2 align-middle" onclick={() => onselect(item)}>
 			<div class="h-8 w-8 overflow-hidden rounded border border-border-primary bg-fg">
 				{#if item.cover_file_key}
-					<img src={`/files/${item.cover_file_key}`} alt="" class="h-full w-full object-cover" />
+					<img src={getR2Url(item.cover_file_key)} alt="" class="h-full w-full object-cover" />
 				{:else}
 					<div class="flex h-full w-full items-center justify-center text-text-disabled">
 						<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">

@@ -182,7 +182,7 @@
 							>
 								{#if editCoverFileKey}
 									<img
-										src={`/files/${editCoverFileKey}`}
+										src={getR2Url(editCoverFileKey)}
 										alt="封面"
 										class="h-full w-full object-cover"
 									/>
@@ -269,7 +269,7 @@
 						{#if music.cover_file_key}
 							<div class="w-full overflow-hidden rounded-md border border-border-primary" style="aspect-ratio: 1/1">
 								<img
-									src={`/files/${music.cover_file_key}`}
+									src={getR2Url(music.cover_file_key)}
 									alt="封面"
 									class="h-full w-full object-cover"
 								/>

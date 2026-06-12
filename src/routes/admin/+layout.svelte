@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { adminState, playerState, requestTogglePlay, requestPlayPrevious, requestPlayNext, requestSeek, loadTracks } from '$lib/stores/admin.svelte';
 	import { initPlayer, destroyPlayer } from '$lib/utils/player';
+	import { getR2Url } from '$lib/utils/music';
 	import favicon from '$lib/assets/favicon.svg';
 	import { LayoutDashboard, Music, Image, Play, Pause, SkipBack, SkipForward } from '@lucide/svelte';
 	import Scrollbar from '$lib/components/Scrollbar.svelte';
@@ -16,16 +17,6 @@
 		{ icon: Image, label: '图片管理', href: '/admin/image' }
 	];
 
-	function navHref(href: '/admin/dashboard' | '/admin/music' | '/admin/image') {
-		switch (href) {
-			case '/admin/dashboard':
-				return resolve('/admin/dashboard', {});
-			case '/admin/music':
-				return resolve('/admin/music', {});
-			case '/admin/image':
-				return resolve('/admin/image', {});
-		}
-	}
 
 	function isActive(href: string): boolean {
 		return (page.url.pathname as string).startsWith(href);
@@ -84,7 +75,7 @@
 				<nav class="p-4">
 				{#each navItems as item (item.href)}
 					<a
-						href={navHref(item.href)}
+						href={resolve(item.href, {})}
 						class="mb-2 flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
 						style={isActive(item.href) ? 'background: var(--color-bg-primary-hover)' : ''}
 						class:text-primary={isActive(item.href)}
@@ -126,7 +117,7 @@
 							aria-label={playing ? '暂停' : '播放'}
 						>
 							{#if track.cover_file_key}
-								<img src={`/files/${track.cover_file_key}`} alt="" class="h-full w-full object-cover" />
+								<img src={getR2Url(track.cover_file_key)} alt="" class="h-full w-full object-cover" />
 							{:else}
 								<div class="flex h-full w-full items-center justify-center bg-bg-primary text-text-disabled">
 									<Music class="h-4 w-4" />
@@ -164,7 +155,7 @@
 					</div>
 					<div class="h-10 w-10 shrink-0 overflow-hidden rounded border border-border-primary bg-bg-primary">
 						{#if track?.cover_file_key}
-							<img src={`/files/${track.cover_file_key}`} alt="" class="h-full w-full object-cover" />
+							<img src={getR2Url(track.cover_file_key)} alt="" class="h-full w-full object-cover" />
 						{:else}
 							<div class="flex h-full w-full items-center justify-center text-text-disabled">
 								<Music class="h-4 w-4" />

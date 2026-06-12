@@ -19,19 +19,3 @@ export interface Image {
 	created_at: string;
 	updated_at: string;
 }
-
-export interface MusicListResponse {
-	items: Music[];
-	page: number;
-	pageSize: number;
-	total: number;
-	totalPages: number;
-}
-
-export interface ImageListResponse {
-	items: Image[];
-	page: number;
-	pageSize: number;
-	total: number;
-	totalPages: number;
-}
