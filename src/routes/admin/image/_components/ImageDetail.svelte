@@ -19,6 +19,7 @@
 	interface BgColors { auto: ColorEntry[]; manual: string[]; active: string }
 
 	let editing = $state(false);
+	let editingImage: Image | null = $state(null);
 	let name = $state('');
 	let imageUrl = $state('');
 	let stagingUrl = $state('');
@@ -69,12 +70,14 @@
 
 	function startEdit() {
 		if (!image) return;
-		editing = true; name = image.name; imageUrl = ''; stagingUrl = '';
+		editingImage = image;
+		editing = true; name = image.name; imageUrl = ""; stagingUrl = "";
 		croppedAreaPixels = null; bgColors = parseBg(image.background_colors); error = '';
 	}
 
 	function cancelEdit() {
-		editing = false;
+		if (imageUrl) URL.revokeObjectURL(imageUrl); imageUrl = "";
+		editing = false; editingImage = null;
 		if (imageUrl) URL.revokeObjectURL(imageUrl); imageUrl = '';
 		if (stagingUrl) URL.revokeObjectURL(stagingUrl); stagingUrl = '';
 		bgColors = { auto: [], manual: [], active: '' };
@@ -231,7 +234,7 @@
 	}
 
 	async function handleSave() {
-		if (!image || uploading) return;
+		if (!editingImage || uploading) return;
 		uploading = true; error = '';
 		try {
 			const formData = new FormData();
@@ -240,9 +243,10 @@
 				const { croppedFile, backgroundColor } = await generateFiles();
 				formData.set('file', croppedFile); formData.set('aspect_ratio', '1:1'); formData.set('background_color', backgroundColor);
 			}
-			const res = await fetch(`/api/admin/image?id=${image.id}`, { method: 'PUT', body: formData });
+			const res = await fetch(`/api/admin/image?id=${editingImage.id}`, { method: 'PUT', body: formData });
 			if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '保存失败'); }
-			reset(); onsaved();
+				adminState.selectedImage = editingImage;
+				reset(); onsaved();
 		} catch (err) { error = (err as Error).message; } finally { uploading = false; }
 	}
 
@@ -363,7 +367,7 @@
 								{#if hasNewImage}
 									<img src={imageUrl} alt="" class="h-full w-full object-cover" />
 								{:else if image}
-									<img src={getR2Url(image.file_key)} alt={image.name} class="h-full w-full object-cover" />
+									<img src={getR2Url(editingImage!.file_key)} alt={editingImage!.name} class="h-full w-full object-cover" />
 								{/if}
 								<div class="absolute inset-0 flex flex-col opacity-0 transition-opacity group-hover:opacity-100">
 									<button type="button" onclick={() => fileInput?.click()} class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60">重新上传</button>
