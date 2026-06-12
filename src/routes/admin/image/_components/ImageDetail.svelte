@@ -76,7 +76,7 @@
 	}
 
 	function cancelEdit() {
-		editing = false; editingImage = null;
+		adminState.selectedImage = editingImage; editing = false; editingImage = null;
 		if (imageUrl) URL.revokeObjectURL(imageUrl); imageUrl = '';
 		if (stagingUrl) URL.revokeObjectURL(stagingUrl); stagingUrl = '';
 		bgColors = { auto: [], manual: [], active: '' };
