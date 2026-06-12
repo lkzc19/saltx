@@ -56,7 +56,7 @@
 	}
 
 	export function reset() {
-		editing = false; name = '';
+		editing = false; editingImage = null; name = '';
 		if (imageUrl) URL.revokeObjectURL(imageUrl); imageUrl = '';
 		if (stagingUrl) URL.revokeObjectURL(stagingUrl); stagingUrl = '';
 		crop = { x: 0, y: 0 }; zoom = 1; croppedAreaPixels = null;
@@ -70,13 +70,12 @@
 
 	function startEdit() {
 		if (!image) return;
-		editingImage = image;
-		editing = true; name = image.name; imageUrl = ""; stagingUrl = "";
+		editingImage = image; editing = true;
+		name = image.name; imageUrl = ''; stagingUrl = '';
 		croppedAreaPixels = null; bgColors = parseBg(image.background_colors); error = '';
 	}
 
 	function cancelEdit() {
-		if (imageUrl) URL.revokeObjectURL(imageUrl); imageUrl = "";
 		editing = false; editingImage = null;
 		if (imageUrl) URL.revokeObjectURL(imageUrl); imageUrl = '';
 		if (stagingUrl) URL.revokeObjectURL(stagingUrl); stagingUrl = '';
@@ -109,7 +108,8 @@
 				if (!blob) return;
 				if (imageUrl) URL.revokeObjectURL(imageUrl);
 				imageUrl = URL.createObjectURL(blob);
-				bgColors = { auto: [{ color: getMatchingBackgroundColor(canvas), algorithm: 'kmeans' }], manual: [], active: getMatchingBackgroundColor(canvas) };
+				const color = getMatchingBackgroundColor(canvas);
+				bgColors = { auto: [{ color, algorithm: 'kmeans' }], manual: [], active: color };
 				croppedAreaPixels = null;
 			}, 'image/webp', 0.9);
 		};
@@ -147,14 +147,9 @@
 		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
 		const x = Math.floor(((e.clientX - rect.left) / rect.width) * sampleCanvas.width);
 		const y = Math.floor(((e.clientY - rect.top) / rect.height) * sampleCanvas.height);
-		const relX = e.clientX - rect.left;
-		const relY = e.clientY - rect.top;
-		lensX = relX;
-		lensY = relY;
-		lensVisible = true;
+		lensX = e.clientX - rect.left; lensY = e.clientY - rect.top; lensVisible = true;
+		containerWidth = rect.width; containerHeight = rect.height;
 		const ctx = sampleCanvas.getContext('2d');
-		containerWidth = rect.width;
-		containerHeight = rect.height;
 		if (!ctx) return;
 		const pixel = ctx.getImageData(x, y, 1, 1).data;
 		hoveredColor = rgbToHex(pixel[0], pixel[1], pixel[2]);
@@ -179,7 +174,7 @@
 	function setActiveColor(color: string) { bgColors.active = color; }
 
 	async function recalculate() {
-		if (!image || !imageUrl) return;
+		if (!image) return;
 		uploading = true;
 		try {
 			const img = new Image();
@@ -191,10 +186,12 @@
 				ctx.drawImage(img, 0, 0);
 				const color = getMatchingBackgroundColor(canvas);
 				const res = await fetch(`/api/admin/image/recalculate?id=${image.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ color }) });
-				if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '重新计算失败'); }
-				bgColors = parseBg((await res.json() as Image).background_colors); onsaved();
+				const data = await res.json();
+				if (!res.ok) throw new Error((data as { error?: string }).error ?? '重新计算失败');
+				bgColors = parseBg((data as Image).background_colors);
+				onsaved();
 			};
-			img.src = imageUrl;
+			img.src = imageUrl || getR2Url(image.file_key);
 		} catch (err) { error = (err as Error).message; } finally { uploading = false; }
 	}
 
@@ -245,8 +242,8 @@
 			}
 			const res = await fetch(`/api/admin/image?id=${editingImage.id}`, { method: 'PUT', body: formData });
 			if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '保存失败'); }
-				adminState.selectedImage = editingImage;
-				reset(); onsaved();
+			adminState.selectedImage = editingImage;
+			reset(); onsaved();
 		} catch (err) { error = (err as Error).message; } finally { uploading = false; }
 	}
 
@@ -262,7 +259,6 @@
 
 {#if image || isAdding}
 	<aside class="flex w-80 shrink-0 flex-col overflow-hidden border-l border-border-primary bg-fg">
-		<!-- Header -->
 		<div class="flex items-center justify-between border-b border-border-primary px-4 py-4">
 			<h3 class="text-sm font-semibold text-text-primary">{isAdding ? '上传图片' : editing ? '编辑图片' : '图片详情'}</h3>
 			<button onclick={close} class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text-primary" aria-label="关闭">
@@ -270,7 +266,6 @@
 			</button>
 		</div>
 
-		<!-- 内容区 -->
 		<div class="flex flex-1 flex-col min-h-0">
 			<Scrollbar class="flex-1 min-h-0">
 				<div class="p-4">
@@ -298,8 +293,9 @@
 												<span class="text-[10px] text-text-disabled">自动</span>
 												<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
 													{#each bgColors.auto as entry, i}
-						{#if bgColors.active === entry.color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
-														<span class="relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.auto.length - 1} style:background-color={entry.color}></span>
+														<span class="relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.auto.length - 1} style:background-color={entry.color}>
+															{#if bgColors.active === entry.color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
+														</span>
 													{/each}
 												</div>
 											</div>
@@ -313,44 +309,12 @@
 															<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
 																<svg class="h-3 w-3 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
 															</span>
-						{#if bgColors.active === color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
+															{#if bgColors.active === color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
 														</button>
 													{/each}
 												</div>
 											</div>
 										{/if}
-									</div>
-									<div>
-										<label for="add-active-color" class="mb-1.5 block text-xs text-text-disabled">使用颜色</label>
-										<Select.Root type="single" value={bgColors.active} onValueChange={(v) => { if (v) setActiveColor(v); }}>
-											<Select.Trigger class="flex h-9 w-full items-center gap-2 rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none">
-												{#if bgColors.active}
-													<span class="inline-block h-4 w-4 shrink-0 rounded-sm border border-border-primary" style:background-color={bgColors.active}></span>
-													<span class="truncate">{bgColors.auto.find((e) => e.color === bgColors.active) ? "自动" : "手动"} - {bgColors.active}</span>
-												{:else}
-													<span class="text-text-disabled">选择颜色</span>
-												{/if}
-												<svg class="ml-auto h-4 w-4 shrink-0 text-text-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" /></svg>
-											</Select.Trigger>
-											<Select.Portal>
-												<Select.Content class="z-50 max-h-60 overflow-hidden rounded-md border border-border-primary bg-fg shadow-lg" style="width: var(--bits-floating-anchor-width)">
-													<Select.Viewport class="p-1">
-														{#each bgColors.auto as entry}
-															<Select.Item value={entry.color} label={"自动 - " + entry.color} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-text-primary outline-none data-[highlighted]:bg-bg-secondary-hover">
-																<span class="inline-block h-4 w-4 rounded-sm border border-border-primary" style:background-color={entry.color}></span>
-																自动 - {entry.color}
-															</Select.Item>
-														{/each}
-														{#each bgColors.manual as color}
-															<Select.Item value={color} label={"手动 - " + color} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-text-primary outline-none data-[highlighted]:bg-bg-secondary-hover">
-																<span class="inline-block h-4 w-4 rounded-sm border border-border-primary" style:background-color={color}></span>
-																手动 - {color}
-															</Select.Item>
-														{/each}
-													</Select.Viewport>
-												</Select.Content>
-											</Select.Portal>
-										</Select.Root>
 									</div>
 								{/if}
 							{/if}
@@ -366,8 +330,8 @@
 							<div class="group relative w-full cursor-pointer overflow-hidden rounded-md border border-border-primary" style="aspect-ratio: 1/1">
 								{#if hasNewImage}
 									<img src={imageUrl} alt="" class="h-full w-full object-cover" />
-								{:else if image}
-									<img src={getR2Url(editingImage!.file_key)} alt={editingImage!.name} class="h-full w-full object-cover" />
+								{:else if editingImage}
+									<img src={getR2Url(editingImage.file_key)} alt={editingImage.name} class="h-full w-full object-cover" />
 								{/if}
 								<div class="absolute inset-0 flex flex-col opacity-0 transition-opacity group-hover:opacity-100">
 									<button type="button" onclick={() => fileInput?.click()} class="flex flex-1 items-center justify-center bg-black/50 text-sm text-white transition-colors hover:bg-black/60">重新上传</button>
@@ -383,8 +347,9 @@
 											<span class="text-[10px] text-text-disabled">自动</span>
 											<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
 												{#each bgColors.auto as entry, i}
-									{#if bgColors.active === entry.color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
-													<span class="h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.auto.length - 1} style:background-color={entry.color}></span>
+													<span class="relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.auto.length - 1} style:background-color={entry.color}>
+														{#if bgColors.active === entry.color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
+													</span>
 												{/each}
 											</div>
 										</div>
@@ -398,13 +363,15 @@
 														<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
 															<svg class="h-3 w-3 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
 														</span>
-								{#if bgColors.active === color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
+														{#if bgColors.active === color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
 													</button>
 												{/each}
 											</div>
 										</div>
 									{/if}
 								</div>
+							{/if}
+							{#if bgColors.auto.length > 0 || bgColors.manual.length > 0}
 								<div>
 									<label for="active-color" class="mb-1.5 block text-xs text-text-disabled">使用颜色</label>
 									<Select.Root type="single" value={bgColors.active} onValueChange={(v) => { if (v) setActiveColor(v); }}>
@@ -421,13 +388,13 @@
 											<Select.Content class="z-50 max-h-60 overflow-hidden rounded-md border border-border-primary bg-fg shadow-lg" style="width: var(--bits-floating-anchor-width)">
 												<Select.Viewport class="p-1">
 													{#each bgColors.auto as entry}
-														<Select.Item value={entry.color} label={"自动 - " + entry.color} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-text-primary outline-none data-[highlighted]:bg-bg-secondary-hover">
+														<Select.Item value={entry.color} label={"自动 - " + entry.color} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-text-primary outline-none data-highlighted:bg-bg-secondary-hover">
 															<span class="inline-block h-4 w-4 rounded-sm border border-border-primary" style:background-color={entry.color}></span>
 															自动 - {entry.color}
 														</Select.Item>
 													{/each}
 													{#each bgColors.manual as color}
-														<Select.Item value={color} label={"手动 - " + color} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-text-primary outline-none data-[highlighted]:bg-bg-secondary-hover">
+														<Select.Item value={color} label={"手动 - " + color} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-text-primary outline-none data-highlighted:bg-bg-secondary-hover">
 															<span class="inline-block h-4 w-4 rounded-sm border border-border-primary" style:background-color={color}></span>
 															手动 - {color}
 														</Select.Item>
@@ -487,7 +454,6 @@
 				</div>
 			</Scrollbar>
 
-			<!-- 按钮区 -->
 			<div class="flex min-h-18 items-center border-t border-border-primary px-4">
 				{#if isAdding}
 					<div class="flex w-full gap-2">
