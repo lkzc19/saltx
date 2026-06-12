@@ -37,6 +37,8 @@
 	let lensX = $state(0);
 	let lensY = $state(0);
 	let lensVisible = $state(false);
+	let containerWidth = $state(0);
+	let containerHeight = $state(0);
 	let magnifierCanvas: HTMLCanvasElement | undefined = $state(undefined);
 
 	let isAdding = $derived(adminState.addingImage);
@@ -142,8 +144,14 @@
 		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
 		const x = Math.floor(((e.clientX - rect.left) / rect.width) * sampleCanvas.width);
 		const y = Math.floor(((e.clientY - rect.top) / rect.height) * sampleCanvas.height);
-		lensX = e.clientX - rect.left; lensY = e.clientY - rect.top; lensVisible = true;
+		const relX = e.clientX - rect.left;
+		const relY = e.clientY - rect.top;
+		lensX = relX;
+		lensY = relY;
+		lensVisible = true;
 		const ctx = sampleCanvas.getContext('2d');
+		containerWidth = rect.width;
+		containerHeight = rect.height;
 		if (!ctx) return;
 		const pixel = ctx.getImageData(x, y, 1, 1).data;
 		hoveredColor = rgbToHex(pixel[0], pixel[1], pixel[2]);
@@ -530,7 +538,7 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
 		onclick={closeSampling} onkeydown={(e) => e.key === 'Escape' && closeSampling()}>
-		<div class="flex w-full max-w-2xl flex-col overflow-hidden bg-fg shadow-2xl"
+		<div class="flex w-full max-w-2xl flex-col bg-fg shadow-2xl"
 			onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 			<div class="flex items-center justify-between border-b border-border-primary px-4 py-3">
 				<h3 class="text-sm font-semibold text-text-primary">取色</h3>
@@ -546,7 +554,7 @@
 					<img src={getR2Url(image.file_key)} alt={image.name} class="h-full w-full object-contain" />
 				{/if}
 				{#if lensVisible}
-					<div class="pointer-events-none absolute" style:left="{lensX + 16}px" style:top="{lensY + 16}px">
+					<div class="pointer-events-none absolute" style:left="{lensX > containerWidth - 180 ? lensX - 168 : lensX + 16}px" style:top="{lensY > containerHeight - 180 ? lensY - 168 : lensY + 16}px">
 						<div class="flex flex-col">
 							<div class="magnifier">
 								<canvas bind:this={magnifierCanvas} width="152" height="152" class="h-full w-full"></canvas>
