@@ -2,6 +2,14 @@
 @plugin '@tailwindcss/typography';
 @import 'overlayscrollbars/styles/overlayscrollbars.css';
 
+@font-face {
+  font-family: 'PingFangShangShangQianTi';
+  src: url('$lib/assets/fonts/PingFangShangShangQianTi-2.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-cf: var(--color-orange-500);
 

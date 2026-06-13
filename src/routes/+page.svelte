@@ -979,6 +979,7 @@
 	}
 
 	h1 {
+			font-family: "PingFangShangShangQianTi", sans-serif;
 		margin: 0;
 		font-size: clamp(1.65rem, 3.2vw, 2.35rem);
 		line-height: 1.04;
@@ -989,6 +990,7 @@
 	}
 
 	.artist {
+			font-family: "PingFangShangShangQianTi", sans-serif;
 		margin: 1.1rem 0 0;
 		font-size: 1.08rem;
 		font-weight: 520;
