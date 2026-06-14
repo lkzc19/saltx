@@ -862,6 +862,7 @@
 		aspect-ratio: 1 / 1;
 		overflow: hidden;
 		background: var(--bar-bg);
+		border: 1px solid var(--text-primary);
 	}
 
 	.cover {
