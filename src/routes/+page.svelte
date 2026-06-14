@@ -153,6 +153,16 @@
 		clearDrawerCloseTimer();
 	}
 
+	function handleOutsideClick(event: MouseEvent) {
+		if (!drawerOpen || drawerPinned) return;
+		const target = event.target as HTMLElement;
+		const drawer = document.getElementById('track-drawer');
+		const toggle = document.querySelector('.drawer-toggle');
+		if (drawer?.contains(target) || toggle?.contains(target)) return;
+		drawerOpen = false;
+		clearDrawerCloseTimer();
+	}
+
 	function setupIdleChrome() {
 		mediaQuery = window.matchMedia('(pointer:fine)');
 		if (!mediaQuery.matches) return;
@@ -393,7 +403,7 @@
 	onpause={() => (playing = false)}
 ></audio>
 
-<div class="player-page" data-theme={isLightTheme ? 'light' : 'dark'} style={`--accent-color:${backgroundHex}; --accent-rgb:${backgroundRgb};`}>
+<div class="player-page" data-theme={isLightTheme ? 'light' : 'dark'} style={`--accent-color:${backgroundHex}; --accent-rgb:${backgroundRgb};`} onclick={handleOutsideClick}>
 	<div
 		class="drawer-edge-trigger"
 		aria-hidden="true"
@@ -599,7 +609,7 @@
 
 	.drawer-edge-trigger {
 		position: fixed;
-		top: 0;
+		top: 50%;
 		right: 0;
 		bottom: 0;
 		width: 44px;
