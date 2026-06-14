@@ -55,8 +55,10 @@
 	{/snippet}
 	{#snippet row(item)}
 		<td class="border-b border-r border-border-primary px-2 align-middle" onclick={() => onselect(item)}>
-			<div class="h-8 w-8 overflow-hidden rounded border border-border-primary bg-fg">
-				<img src={getR2Url(item.file_key)} alt={item.name} class="h-full w-full object-cover" />
+			<div class="flex items-center justify-center">
+				<div class="overflow-hidden rounded border border-border-primary bg-fg" style:aspect-ratio={item.aspect_ratio === '16:9' ? '16/9' : '1/1'} style:width={item.aspect_ratio === '16:9' ? '2.5rem' : '2rem'} style:height={item.aspect_ratio === '16:9' ? 'auto' : '2rem'}>
+					<img src={getR2Url(item.file_key)} alt={item.name} class="h-full w-full object-cover" />
+				</div>
 			</div>
 		</td>
 		<td class="cursor-pointer border-b border-r border-border-primary px-4 align-middle text-text-primary" onclick={() => onselect(item)}>

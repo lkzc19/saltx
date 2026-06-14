@@ -6,15 +6,16 @@
 	import { initPlayer, destroyPlayer } from '$lib/utils/player';
 	import { getR2Url } from '$lib/utils/music';
 	import favicon from '$lib/assets/favicon.svg';
-	import { LayoutDashboard, Music, Image, Play, Pause, SkipBack, SkipForward } from '@lucide/svelte';
+	import { LayoutDashboard, Music, Image, Megaphone, Play, Pause, SkipBack, SkipForward } from '@lucide/svelte';
 	import Scrollbar from '$lib/components/Scrollbar.svelte';
 
 	let { children } = $props();
 
-	const navItems: { icon: typeof LayoutDashboard; label: string; href: '/admin/dashboard' | '/admin/music' | '/admin/image' }[] = [
+	const navItems: { icon: typeof LayoutDashboard; label: string; href: '/admin/dashboard' | '/admin/music' | '/admin/image' | '/admin/announcement' }[] = [
 		{ icon: LayoutDashboard, label: '仪表盘', href: '/admin/dashboard' },
 		{ icon: Music, label: '音乐管理', href: '/admin/music' },
-		{ icon: Image, label: '图片管理', href: '/admin/image' }
+		{ icon: Image, label: '图片管理', href: '/admin/image' },
+		{ icon: Megaphone, label: '公告管理', href: '/admin/announcement' }
 	];
 
 

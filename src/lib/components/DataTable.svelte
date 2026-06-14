@@ -6,15 +6,13 @@
 		data,
 		key,
 		row,
-		header,
-		emptyText = '暂无数据'
+		header
 	}: {
 		columns: { header: string; width?: string; headerClass?: string; class?: string }[];
 		data: T[];
 		key: (item: T) => string;
 		row: Snippet<[T]>;
 		header?: Snippet<[{ col: { header: string; width?: string; headerClass?: string; class?: string }; index: number }]>;
-		emptyText?: string;
 	} = $props();
 </script>
 
@@ -40,10 +38,6 @@
 			{#each data as item (key(item))}
 				<tr class="h-12 bg-fg transition-colors hover:bg-bg-secondary-hover">
 					{@render row(item)}
-				</tr>
-			{:else}
-				<tr>
-					<td colspan={columns.length} class="px-4 py-12 text-center text-text-disabled">{emptyText}</td>
 				</tr>
 			{/each}
 		</tbody>

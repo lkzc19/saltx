@@ -29,6 +29,7 @@
 	let error = $state('');
 	let fileInput: HTMLInputElement | undefined = $state(undefined);
 	let cropOpen = $state(false);
+	let aspectRatio = $state<'1:1' | '16:9'>('1:1');
 
 	let bgColors = $state<BgColors>({ auto: [], manual: [], active: '' });
 	let samplingOpen = $state(false);
@@ -59,6 +60,7 @@
 		uploading = false; error = ''; cropOpen = false;
 		bgColors = { auto: [], manual: [], active: '' };
 		samplingOpen = false; hoveredColor = null;
+		aspectRatio = '1:1';
 		if (fileInput) fileInput.value = '';
 	}
 
@@ -69,6 +71,7 @@
 		editingImage = image; editing = true;
 		name = image.name; imageUrl = ''; stagingUrl = '';
 		croppedAreaPixels = null; bgColors = parseBg(image.background_colors); error = '';
+		aspectRatio = (image.aspect_ratio === '16:9' ? '16:9' : '1:1') as '1:1' | '16:9';
 	}
 
 	function cancelEdit() {
@@ -219,7 +222,7 @@
 			const { croppedFile, backgroundColor } = await generateFiles();
 			const formData = new FormData();
 			if (name) formData.set('name', name);
-			formData.set('file', croppedFile); formData.set("aspect_ratio", "1:1");
+			formData.set('file', croppedFile); formData.set("aspect_ratio", aspectRatio);
 			const res = await fetch('/api/admin/image', { method: 'POST', body: formData });
 			if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '创建失败'); }
 			reset(); oncreated();
@@ -234,7 +237,7 @@
 			formData.set('name', name); formData.set('background_colors', JSON.stringify(bgColors));
 			if (croppedAreaPixels && imageUrl) {
 				const { croppedFile, backgroundColor } = await generateFiles();
-				formData.set('file', croppedFile); formData.set("aspect_ratio", "1:1");
+				formData.set('file', croppedFile); formData.set("aspect_ratio", aspectRatio);
 			}
 			const res = await fetch(`/api/admin/image?id=${editingImage.id}`, { method: 'PUT', body: formData });
 			if (!res.ok) { const body = (await res.json()) as { error?: string }; throw new Error(body.error ?? '保存失败'); }
@@ -267,8 +270,15 @@
 				<div class="p-4">
 					{#if isAdding}
 						<div class="space-y-4">
+							<div>
+								<span class="mb-1.5 block text-xs text-text-disabled">宽高比</span>
+								<div class="flex gap-2">
+									<button type="button" onclick={() => aspectRatio = '1:1'} class="flex-1 rounded-md border py-1.5 text-sm transition-colors" class:border-primary={aspectRatio === '1:1'} class:border-border-primary={aspectRatio !== '1:1'} class:bg-bg-secondary={aspectRatio === '1:1'} class:text-text-primary={aspectRatio === '1:1'} class:text-text-disabled={aspectRatio !== '1:1'}>1:1</button>
+									<button type="button" onclick={() => aspectRatio = '16:9'} class="flex-1 rounded-md border py-1.5 text-sm transition-colors" class:border-primary={aspectRatio === '16:9'} class:border-border-primary={aspectRatio !== '16:9'} class:bg-bg-secondary={aspectRatio === '16:9'} class:text-text-primary={aspectRatio === '16:9'} class:text-text-disabled={aspectRatio !== '16:9'}>16:9</button>
+								</div>
+							</div>
 							{#if !hasNewImage}
-								<div class="flex w-full cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-border-primary bg-bg-secondary transition-colors hover:border-text-disabled" style="aspect-ratio: 1/1" onclick={() => fileInput?.click()} onkeydown={() => {}} role="button" tabindex="0">
+								<div class="flex w-full cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-border-primary bg-bg-secondary transition-colors hover:border-text-disabled" style="aspect-ratio: {aspectRatio === '16:9' ? '16/9' : '1/1'}" onclick={() => fileInput?.click()} onkeydown={() => {}} role="button" tabindex="0">
 									<svg class="mb-2 h-8 w-8 text-text-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" /></svg>
 									<p class="text-sm text-text-disabled">点击选择图片</p>
 									<p class="mt-1 text-xs text-text-disabled opacity-60">支持 JPG、PNG、WebP</p>
@@ -323,7 +333,14 @@
 
 					{:else if editing}
 						<div class="space-y-4">
-							<div class="group relative w-full cursor-pointer overflow-hidden rounded-md border border-border-primary" style="aspect-ratio: 1/1">
+							<div>
+								<span class="mb-1.5 block text-xs text-text-disabled">宽高比</span>
+								<div class="flex gap-2">
+									<button type="button" onclick={() => aspectRatio = '1:1'} class="flex-1 rounded-md border py-1.5 text-sm transition-colors" class:border-primary={aspectRatio === '1:1'} class:border-border-primary={aspectRatio !== '1:1'} class:bg-bg-secondary={aspectRatio === '1:1'} class:text-text-primary={aspectRatio === '1:1'} class:text-text-disabled={aspectRatio !== '1:1'}>1:1</button>
+									<button type="button" onclick={() => aspectRatio = '16:9'} class="flex-1 rounded-md border py-1.5 text-sm transition-colors" class:border-primary={aspectRatio === '16:9'} class:border-border-primary={aspectRatio !== '16:9'} class:bg-bg-secondary={aspectRatio === '16:9'} class:text-text-primary={aspectRatio === '16:9'} class:text-text-disabled={aspectRatio !== '16:9'}>16:9</button>
+								</div>
+							</div>
+							<div class="group relative w-full cursor-pointer overflow-hidden rounded-md border border-border-primary" style="aspect-ratio: {aspectRatio === '16:9' ? '16/9' : '1/1'}">
 								{#if hasNewImage}
 									<img src={imageUrl} alt="" class="h-full w-full object-cover" />
 								{:else if editingImage}
@@ -410,7 +427,7 @@
 
 					{:else if image}
 						<div class="space-y-4">
-							<div class="w-full overflow-hidden rounded-md border border-border-primary" style="aspect-ratio: 1/1">
+							<div class="w-full overflow-hidden rounded-md border border-border-primary" style="aspect-ratio: {image.aspect_ratio === '16:9' ? '16/9' : '1/1'}">
 								<img src={getR2Url(image.file_key)} alt={image.name} class="h-full w-full object-cover" />
 							</div>
 							<div><span class="text-xs text-text-disabled">名称</span><p class="mt-1 text-sm text-text-primary">{image.name}</p></div>
@@ -489,8 +506,8 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
 	<div class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
 		<div class="flex min-h-0 w-full max-w-2xl flex-1 items-center justify-center px-6 py-4">
-			<div class="relative aspect-square w-full overflow-hidden bg-black">
-				<Cropper image={stagingUrl} bind:crop bind:zoom aspect={1} oncropcomplete={handleCropComplete} />
+			<div class="relative w-full overflow-hidden bg-black" style="aspect-ratio: {aspectRatio === '16:9' ? '16/9' : '1/1'}">
+				<Cropper image={stagingUrl} bind:crop bind:zoom aspect={aspectRatio === '16:9' ? 16/9 : 1} oncropcomplete={handleCropComplete} />
 			</div>
 		</div>
 		<div class="flex w-full max-w-2xl gap-3 px-6 pb-6">

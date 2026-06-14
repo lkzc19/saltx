@@ -1,20 +1,21 @@
 <script lang="ts">
-	import type { Music, Image } from '$lib/types/music';
+	import type { Announcement } from '$lib/types/announcement';
+	import type { Image } from '$lib/types/music';
 	import { getR2Url } from '$lib/utils/music';
 	import { formatDate } from '$lib/utils/date';
 	import { adminState } from '$lib/stores/admin.svelte';
-	import ImagePickerModal from '$lib/components/ImagePickerModal.svelte';
 	import Scrollbar from '$lib/components/Scrollbar.svelte';
+	import ImagePickerModal from '$lib/components/ImagePickerModal.svelte';
 
 	let {
-		music,
+		announcement,
 		onsaved,
 		oncreated,
 		ondeleted
 	}: {
-		music: Music | null;
-		onsaved: (updated: Music) => void;
-		oncreated: (created: Music) => void;
+		announcement: Announcement | null;
+		onsaved: (updated: Announcement) => void;
+		oncreated: (created: Announcement) => void;
 		ondeleted: () => void;
 	} = $props();
 
@@ -23,58 +24,11 @@
 	let error = $state('');
 	let pickerOpen = $state(false);
 
-	// 表单字段
-	let editName = $state('');
-	let editArtist = $state('');
+	let editTitle = $state('');
+	let editContent = $state('');
 	let editCoverFileKey = $state<string | null>(null);
-	let newFile = $state<File | null>(null);
-	let fileInputEl = $state<HTMLInputElement | undefined>(undefined);
 
-	let fileKey = $derived(music ? music.file_key : '');
-	let fileUrl = $derived(music ? getR2Url(music.file_key) : '');
-	let isAdding = $derived(adminState.addingMusic);
-
-	// 进入新增模式时自动初始化表单
-	$effect(() => {
-		if (isAdding) {
-			editName = '';
-			editArtist = '';
-			editCoverFileKey = null;
-			newFile = null;
-			error = '';
-			editing = true;
-		}
-	});
-
-	function startEdit() {
-		if (!music) return;
-		editName = music.name;
-		editArtist = music.artist;
-		editCoverFileKey = music.cover_file_key;
-		newFile = null;
-		error = '';
-		editing = true;
-	}
-
-	function close() {
-		adminState.addingMusic = false;
-		adminState.selectedMusic = null;
-		editing = false;
-		newFile = null;
-		error = '';
-		if (fileInputEl) fileInputEl.value = '';
-	}
-
-	function cancelEdit() {
-		if (isAdding) {
-			close();
-			return;
-		}
-		editing = false;
-		newFile = null;
-		error = '';
-		if (fileInputEl) fileInputEl.value = '';
-	}
+	let isAdding = $derived(adminState.addingAnnouncement);
 
 	function handleCoverSelect(img: Image) {
 		editCoverFileKey = img.file_key;
@@ -84,6 +38,41 @@
 		editCoverFileKey = null;
 	}
 
+	$effect(() => {
+		if (isAdding) {
+			editTitle = '';
+			editContent = '';
+			editCoverFileKey = null;
+			error = '';
+			editing = true;
+		}
+	});
+
+	function startEdit() {
+		if (!announcement) return;
+		editTitle = announcement.title;
+		editContent = announcement.content ?? '';
+		editCoverFileKey = announcement.cover_file_key;
+		error = '';
+		editing = true;
+	}
+
+	function close() {
+		adminState.addingAnnouncement = false;
+		adminState.selectedAnnouncement = null;
+		editing = false;
+		error = '';
+	}
+
+	function cancelEdit() {
+		if (isAdding) {
+			close();
+			return;
+		}
+		editing = false;
+		error = '';
+	}
+
 	async function handleSave() {
 		if (saving) return;
 		saving = true;
@@ -91,43 +80,31 @@
 
 		try {
 			const formData = new FormData();
-			formData.set('name', editName);
-			formData.set('artist', editArtist);
+			formData.set('title', editTitle);
+			formData.set('content', editContent);
 			formData.set('cover_file_key', editCoverFileKey ?? '');
 
 			if (isAdding) {
-				// 新增模式：必须有音频文件
-				if (!newFile) {
-					error = '请选择音频文件';
-					saving = false;
-					return;
-				}
-				formData.set('file', newFile);
-				const res = await fetch('/api/admin/music', { method: 'POST', body: formData });
+				const res = await fetch('/api/admin/announcement', { method: 'POST', body: formData });
 				if (!res.ok) {
 					const body = (await res.json()) as { error?: string };
 					throw new Error(body.error ?? '创建失败');
 				}
-				const created = (await res.json()) as Music;
+				const created = (await res.json()) as Announcement;
 				oncreated(created);
 			} else {
-				// 编辑模式
-				if (!music) return;
-				if (newFile) {
-					formData.set('file', newFile);
-				}
-				const res = await fetch(`/api/admin/music?id=${music.id}`, { method: 'PUT', body: formData });
+				if (!announcement) return;
+				const res = await fetch(`/api/admin/announcement?id=${announcement.id}`, { method: 'PUT', body: formData });
 				if (!res.ok) {
 					const body = (await res.json()) as { error?: string };
 					throw new Error(body.error ?? '保存失败');
 				}
-				const updated = (await res.json()) as Music;
+				const updated = (await res.json()) as Announcement;
 				onsaved(updated);
 			}
 
 			editing = false;
-			newFile = null;
-			if (isAdding) adminState.addingMusic = false;
+			if (isAdding) adminState.addingAnnouncement = false;
 		} catch (err) {
 			error = (err as Error).message;
 		} finally {
@@ -136,9 +113,9 @@
 	}
 
 	async function handleDelete() {
-		if (!music || !confirm(`确定要删除「${music.name}」吗？`)) return;
+		if (!announcement || !confirm(`确定要删除「${announcement.title}」吗？`)) return;
 
-		const res = await fetch(`/api/admin/music?id=${music.id}`, { method: 'DELETE' });
+		const res = await fetch(`/api/admin/announcement?id=${announcement.id}`, { method: 'DELETE' });
 		if (!res.ok) {
 			const body = (await res.json()) as { error?: string };
 			error = body.error ?? '删除失败';
@@ -148,11 +125,11 @@
 	}
 </script>
 
-{#if music || isAdding}
+{#if announcement || isAdding}
 	<aside class="flex w-80 shrink-0 flex-col overflow-hidden border-l border-border-primary bg-fg">
 		<!-- Header -->
 		<div class="flex items-center justify-between border-b border-border-primary px-4 py-4">
-			<h3 class="text-sm font-semibold text-text-primary">{isAdding ? '新增音乐' : '音乐详情'}</h3>
+			<h3 class="text-sm font-semibold text-text-primary">{isAdding ? '新增公告' : '公告详情'}</h3>
 			<div class="flex items-center gap-1">
 				<button
 					onclick={close}
@@ -178,7 +155,7 @@
 							<span class="text-xs text-text-disabled">封面</span>
 							<div
 								class="group relative mt-2 w-full cursor-pointer overflow-hidden rounded-md border border-border-primary bg-bg-secondary"
-								style="aspect-ratio: 1/1"
+								style="aspect-ratio: 16/9"
 							>
 								{#if editCoverFileKey}
 									<img
@@ -211,65 +188,45 @@
 										<svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
 										</svg>
-										<span class="text-xs">点击上传封面</span>
+										<span class="text-xs">点击选择封面</span>
 									</button>
 								{/if}
 							</div>
 						</div>
 
-						<!-- 名称 -->
+						<!-- 标题 -->
 						<div>
-							<label for="detail-name" class="mb-1.5 block text-xs text-text-disabled">名称</label>
+							<label for="detail-title" class="mb-1.5 block text-xs text-text-disabled">标题</label>
 							<input
-								id="detail-name"
+								id="detail-title"
 								type="text"
-								bind:value={editName}
+								bind:value={editTitle}
 								class="h-9 w-full rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
 							/>
 						</div>
 
-						<!-- 艺术家 -->
+						<!-- 内容 -->
 						<div>
-							<label for="detail-artist" class="mb-1.5 block text-xs text-text-disabled">艺术家</label>
-							<input
-								id="detail-artist"
-								type="text"
-								bind:value={editArtist}
-								class="h-9 w-full rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
-							/>
-						</div>
-
-						<!-- 音频文件 -->
-						<div>
-							<label for="detail-file" class="mb-1.5 block text-xs text-text-disabled">{isAdding ? '音频文件' : '替换音乐源（可选）'}</label>
-							<label class="flex h-9 cursor-pointer items-center rounded-md border border-border-primary bg-bg-secondary px-3 text-sm transition-colors">
-								<span class={newFile ? 'text-text-primary' : 'text-text-disabled'}>
-									{newFile ? newFile.name : '选择音频文件'}
-								</span>
-								<input
-									id="detail-file"
-									bind:this={fileInputEl}
-									type="file"
-									accept="audio/*"
-									class="hidden"
-									onchange={(e) => {
-										newFile = (e.target as HTMLInputElement).files?.[0] ?? null;
-									}}
-								/>
-							</label>
+							<label for="detail-content" class="mb-1.5 block text-xs text-text-disabled">内容</label>
+							<textarea
+								id="detail-content"
+								bind:value={editContent}
+								rows="4"
+								class="w-full rounded-md border border-border-primary bg-bg-secondary px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-primary resize-none"
+							></textarea>
 						</div>
 
 						{#if error}
 							<p class="text-xs text-error">{error}</p>
 						{/if}
 					</div>
-				{:else if music}
+				{:else if announcement}
 					<!-- 查看模式 -->
 					<div class="space-y-4">
-						{#if music.cover_file_key}
-							<div class="w-full overflow-hidden rounded-md border border-border-primary" style="aspect-ratio: 1/1">
+						{#if announcement.cover_file_key}
+							<div class="w-full overflow-hidden rounded-md border border-border-primary" style="aspect-ratio: 16/9">
 								<img
-									src={getR2Url(music.cover_file_key)}
+									src={getR2Url(announcement.cover_file_key)}
 									alt="封面"
 									class="h-full w-full object-cover"
 								/>
@@ -278,27 +235,25 @@
 
 						<div>
 							<span class="text-xs text-text-disabled">ID</span>
-							<p class="mt-1 font-mono text-sm text-text-primary">{music.id}</p>
+							<p class="mt-1 font-mono text-sm text-text-primary">{announcement.id}</p>
 						</div>
 						<div>
-							<span class="text-xs text-text-disabled">名称</span>
-							<p class="mt-1 text-sm text-text-primary">{music.name}</p>
+							<span class="text-xs text-text-disabled">标题</span>
+							<p class="mt-1 text-sm text-text-primary">{announcement.title}</p>
 						</div>
-						<div>
-							<span class="text-xs text-text-disabled">艺术家</span>
-							<p class="mt-1 text-sm text-text-primary">{music.artist}</p>
-						</div>
-						<div>
-							<span class="text-xs text-text-disabled">文件路径</span>
-							<p class="mt-1 break-all font-mono text-xs text-primary">{fileKey}</p>
-						</div>
+						{#if announcement.content}
+							<div>
+								<span class="text-xs text-text-disabled">内容</span>
+								<p class="mt-1 text-sm text-text-primary whitespace-pre-wrap">{announcement.content}</p>
+							</div>
+						{/if}
 						<div>
 							<span class="text-xs text-text-disabled">创建时间</span>
-							<p class="mt-1 text-xs text-text-disabled">{formatDate(music.created_at)}</p>
+							<p class="mt-1 text-xs text-text-disabled">{formatDate(announcement.created_at)}</p>
 						</div>
 						<div>
 							<span class="text-xs text-text-disabled">更新时间</span>
-							<p class="mt-1 text-xs text-text-disabled">{formatDate(music.updated_at)}</p>
+							<p class="mt-1 text-xs text-text-disabled">{formatDate(announcement.updated_at)}</p>
 						</div>
 					</div>
 				{/if}
@@ -331,7 +286,7 @@
 							{isAdding ? '创建' : '保存'}
 						</button>
 					</div>
-				{:else if music}
+				{:else if announcement}
 					<div class="flex w-full gap-2">
 						<button
 							type="button"

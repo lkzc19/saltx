@@ -27,8 +27,8 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 		return json({ error: '缺少必填字段: file' }, { status: 400 });
 	}
 
-	if (aspectRatio !== '1:1') {
-		return json({ error: '暂仅支持 1:1 比例' }, { status: 400 });
+	if (aspectRatio !== '1:1' && aspectRatio !== '16:9') {
+		return json({ error: '暂仅支持 1:1 和 16:9 比例' }, { status: 400 });
 	}
 
 	const fileName = name ?? file.name.replace(/\.[^/.]+$/, '');
@@ -95,8 +95,8 @@ export const PUT: RequestHandler = async ({ url, request, platform }) => {
 	const existing = await db.select().from(image).where(eq(image.id, id)).get();
 	if (!existing) return json({ error: '图片不存在' }, { status: 404 });
 
-	if (aspectRatio && aspectRatio !== '1:1') {
-		return json({ error: '暂仅支持 1:1 比例' }, { status: 400 });
+	if (aspectRatio && aspectRatio !== '1:1' && aspectRatio !== '16:9') {
+		return json({ error: '暂仅支持 1:1 和 16:9 比例' }, { status: 400 });
 	}
 
 	const updates: Record<string, string | null> = {};

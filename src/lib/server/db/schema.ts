@@ -35,3 +35,21 @@ export const image = sqliteTable('image', {
 		.notNull()
 		.$defaultFn(() => new Date().toISOString())
 });
+
+export const announcement = sqliteTable('announcement', {
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => nanoid8()),
+	title: text('title').notNull(),
+	content: text('content'),
+	cover_file_key: text('cover_file_key'),
+	is_pinned: text('is_pinned')
+		.notNull()
+		.$defaultFn(() => 'false'),
+	created_at: text('created_at')
+		.notNull()
+		.$defaultFn(() => new Date().toISOString()),
+	updated_at: text('updated_at')
+		.notNull()
+		.$defaultFn(() => new Date().toISOString())
+});
