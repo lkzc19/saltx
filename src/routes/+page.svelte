@@ -10,8 +10,6 @@
 	import { getR2Url } from '$lib/utils/music';
 
 	type PlayerTrack = Music;
-	type AudioContextWindow = Window &
-		typeof globalThis & { webkitAudioContext?: typeof AudioContext };
 
 	const IDLE_TIMEOUT = 3000;
 	const DRAWER_CLOSE_DELAY = 1000;
@@ -43,6 +41,8 @@
 	let sourceNode: MediaElementAudioSourceNode | null = null;
 	let frequencyData: InstanceType<typeof Uint8Array> | null = null;
 	let mediaQuery: MediaQueryList | null = null;
+	let drawerEl = $state<HTMLElement | null>(null);
+	let drawerToggleEl = $state<HTMLButtonElement | null>(null);
 
 	const currentTrack = $derived(tracks[currentIndex] ?? null);
 	const backgroundHex = $derived(currentTrack?.background_color ?? DEFAULT_BACKGROUND);
@@ -54,23 +54,26 @@
 			: 'SALT X 勾栏听曲'
 	);
 
-	function hexToRgb(hex: string): string {
+	function parseHex(hex: string): [number, number, number] | null {
 		const normalized = hex.replace('#', '');
-		if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return DEFAULT_BACKGROUND_RGB;
-		const red = parseInt(normalized.slice(0, 2), 16);
-		const green = parseInt(normalized.slice(2, 4), 16);
-		const blue = parseInt(normalized.slice(4, 6), 16);
-		return `${red}, ${green}, ${blue}`;
+		if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return null;
+		return [
+			parseInt(normalized.slice(0, 2), 16),
+			parseInt(normalized.slice(2, 4), 16),
+			parseInt(normalized.slice(4, 6), 16)
+		];
+	}
+
+	function hexToRgb(hex: string): string {
+		const rgb = parseHex(hex);
+		return rgb ? rgb.join(', ') : DEFAULT_BACKGROUND_RGB;
 	}
 
 	function isLightColor(hex: string): boolean {
-		const normalized = hex.replace('#', '');
-		if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return false;
-		const r = parseInt(normalized.slice(0, 2), 16) / 255;
-		const g = parseInt(normalized.slice(2, 4), 16) / 255;
-		const b = parseInt(normalized.slice(4, 6), 16) / 255;
-		const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-		return luminance > 0.5;
+		const rgb = parseHex(hex);
+		if (!rgb) return false;
+		const [r, g, b] = rgb.map((v) => v / 255);
+		return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.5;
 	}
 
 	function formatTime(value: number): string {
@@ -82,27 +85,24 @@
 
 	function getRequestedTrackId(): string | null {
 		if (typeof window === 'undefined') return null;
-		return window.location.search ? new URLSearchParams(window.location.search).get('id') : null;
+		return new URLSearchParams(window.location.search).get('id');
 	}
 
 	function getTrackIndexById(trackId: string | null, items: PlayerTrack[]): number {
 		if (!trackId) return 0;
-		const index = items.findIndex((item) => item.id === trackId);
-		return index >= 0 ? index : 0;
+		return Math.max(0, items.findIndex((item) => item.id === trackId));
 	}
 
 	function syncTrackIdToUrl(trackId: string | null) {
 		if (typeof window === 'undefined') return;
-
 		const url = new URL(window.location.href);
+		const current = url.searchParams.get('id');
+		if (current === trackId) return;
 		if (trackId) {
-			if (url.searchParams.get('id') === trackId) return;
 			url.searchParams.set('id', trackId);
 		} else {
-			if (!url.searchParams.has('id')) return;
 			url.searchParams.delete('id');
 		}
-
 		window.history.replaceState(window.history.state, '', url);
 	}
 
@@ -156,9 +156,7 @@
 	function handleOutsideClick(event: MouseEvent) {
 		if (!drawerOpen || drawerPinned) return;
 		const target = event.target as HTMLElement;
-		const drawer = document.getElementById('track-drawer');
-		const toggle = document.querySelector('.drawer-toggle');
-		if (drawer?.contains(target) || toggle?.contains(target)) return;
+		if (drawerEl?.contains(target) || drawerToggleEl?.contains(target)) return;
 		drawerOpen = false;
 		clearDrawerCloseTimer();
 	}
@@ -215,26 +213,23 @@
 	}
 
 	async function ensureAudioGraph() {
-		if (!audioEl) return;
-
-		const ctor = window.AudioContext ?? (window as AudioContextWindow).webkitAudioContext;
-		if (!ctor) return;
-
-		if (!audioContext) {
-			audioContext = new ctor();
-			analyser = audioContext.createAnalyser();
-			analyser.fftSize = 256;
-			analyser.smoothingTimeConstant = 0.82;
-			sourceNode = audioContext.createMediaElementSource(audioEl);
-			sourceNode.connect(analyser);
-			analyser.connect(audioContext.destination);
-			frequencyData = new Uint8Array(analyser.frequencyBinCount);
-			startWaveformLoop();
+		if (!audioEl || audioContext) {
+			if (audioContext?.state === 'suspended') await audioContext.resume();
+			return;
 		}
 
-		if (audioContext.state === 'suspended') {
-			await audioContext.resume();
-		}
+		const AudioCtx = window.AudioContext ?? (window as any).webkitAudioContext;
+		if (!AudioCtx) return;
+
+		audioContext = new AudioCtx();
+		analyser = audioContext.createAnalyser();
+		analyser.fftSize = 256;
+		analyser.smoothingTimeConstant = 0.82;
+		sourceNode = audioContext.createMediaElementSource(audioEl);
+		sourceNode.connect(analyser);
+		analyser.connect(audioContext.destination);
+		frequencyData = new Uint8Array(analyser.frequencyBinCount);
+		startWaveformLoop();
 	}
 
 	function startWaveformLoop() {
@@ -403,6 +398,8 @@
 	onpause={() => (playing = false)}
 ></audio>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="player-page" data-theme={isLightTheme ? 'light' : 'dark'} style={`--accent-color:${backgroundHex}; --accent-rgb:${backgroundRgb};`} onclick={handleOutsideClick}>
 	<div
 		class="drawer-edge-trigger"
@@ -414,6 +411,7 @@
 	<button
 		type="button"
 		class="drawer-toggle"
+		bind:this={drawerToggleEl}
 		onclick={toggleDrawer}
 		aria-expanded={drawerOpen}
 		aria-controls="track-drawer"
@@ -425,6 +423,7 @@
 		id="track-drawer"
 		class="track-drawer"
 		class:open={drawerOpen}
+		bind:this={drawerEl}
 		onmouseenter={openDrawer}
 		onmouseleave={closeDrawer}
 	>
@@ -477,9 +476,7 @@
 		</div>
 	</aside>
 
-	<header class:hidden={idleChromeHidden}>
-		<div class="logo">saltx</div>
-	</header>
+	<header class="logo" class:hidden={idleChromeHidden}>saltx</header>
 
 	<main>
 		{#if loading}
@@ -827,9 +824,6 @@
 		right: 0;
 		z-index: 1;
 		padding: 2rem 2.5rem;
-	}
-
-	.logo {
 		font-size: 0.82rem;
 		letter-spacing: 0.42em;
 		text-transform: uppercase;
@@ -909,6 +903,7 @@
 	}
 
 	.progress {
+		--thumb-size: 10px;
 		width: 100%;
 		height: 14px;
 		margin: 0;
@@ -935,8 +930,8 @@
 
 	.progress::-webkit-slider-thumb {
 		-webkit-appearance: none;
-		width: 10px;
-		height: 10px;
+		width: var(--thumb-size);
+		height: var(--thumb-size);
 		margin-top: -4px;
 		border-radius: 50%;
 		background: #8a8a8a;
@@ -958,8 +953,8 @@
 	}
 
 	.progress::-moz-range-thumb {
-		width: 10px;
-		height: 10px;
+		width: var(--thumb-size);
+		height: var(--thumb-size);
 		border-radius: 50%;
 		background: #8a8a8a;
 		border: 0;
@@ -1037,10 +1032,10 @@
 		flex-direction: column;
 		align-items: center;
 		padding-top: calc(var(--panel-width) * 0.25 - 2.8rem);
+		font-family: "PingFangShangShangQianTi", sans-serif;
 	}
 
 	h1 {
-			font-family: "PingFangShangShangQianTi", sans-serif;
 		margin: 0;
 		font-size: clamp(2.2rem, 4.5vw, 3.2rem);
 		line-height: 1.04;
@@ -1051,7 +1046,6 @@
 	}
 
 	.artist {
-			font-family: "PingFangShangShangQianTi", sans-serif;
 		margin: 0.4rem 0 0;
 		font-size: 2.1rem;
 		font-weight: 520;
