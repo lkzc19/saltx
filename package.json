@@ -47,13 +47,13 @@
 	},
 	"dependencies": {
 		"@iconify-svelte/line-md": "^1.0.6",
-		"@iconify-svelte/material-symbols": "^1.0.36",
 		"@lucide/svelte": "^1.17.0",
 		"bits-ui": "^2.18.1",
 		"howler": "^2.2.4",
 		"nanoid": "^5.1.11",
 		"overlayscrollbars": "^2.16.0",
 		"overlayscrollbars-svelte": "^0.5.5",
-		"svelte-easy-crop": "^5.0.1"
+		"svelte-easy-crop": "^5.0.1",
+		"wavesurfer.js": "^7.12.8"
 	}
 }

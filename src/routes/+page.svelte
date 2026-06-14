@@ -18,7 +18,7 @@
 	const BAR_COUNT = 120;
 	const DEFAULT_BACKGROUND = '#243042';
 	const DEFAULT_BACKGROUND_RGB = '36, 48, 66';
-	const DEFAULT_BAR_HEIGHT = 0.08;
+	const DEFAULT_BAR_HEIGHT = 0.04;
 
 	let tracks = $state<PlayerTrack[]>([]);
 	let loading = $state(true);
@@ -232,8 +232,8 @@
 					let sum = 0;
 					for (let cursor = start; cursor < end; cursor += 1) sum += data[cursor];
 					const average = sum / (end - start);
-					const normalized = Math.pow(average / 255, 1.2);
-					return Math.min(0.26, Math.max(DEFAULT_BAR_HEIGHT, normalized * 0.22));
+					const normalized = Math.pow(average / 255, 0.9);
+					return Math.min(0.42, Math.max(DEFAULT_BAR_HEIGHT, normalized * 0.38));
 				});
 
 				waveHeights = waveHeights.map((value, index) => value * 0.55 + nextHeights[index] * 0.45);
@@ -523,8 +523,10 @@
 
 				<div class="meta-column">
 					<div class="meta-stack">
-						<h1>{currentTrack.name}</h1>
-						<p class="artist">{currentTrack.artist}</p>
+						<div class="track-info">
+							<h1>{currentTrack.name}</h1>
+							<p class="artist">{currentTrack.artist}</p>
+						</div>
 
 						<div class="waveform" aria-hidden="true">
 							{#each waveHeights as height, index (index)}
@@ -964,7 +966,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: flex-end;
+		justify-content: flex-start;
 		justify-self: center;
 		padding: 0;
 		text-align: center;
@@ -974,14 +976,22 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: flex-end;
+		justify-content: space-between;
+		flex: 1;
 		width: 100%;
+	}
+
+	.track-info {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding-top: calc(var(--panel-width) * 0.25 - 2.8rem);
 	}
 
 	h1 {
 			font-family: "PingFangShangShangQianTi", sans-serif;
 		margin: 0;
-		font-size: clamp(1.65rem, 3.2vw, 2.35rem);
+		font-size: clamp(2.2rem, 4.5vw, 3.2rem);
 		line-height: 1.04;
 		font-weight: 320;
 		letter-spacing: -0.03em;
@@ -991,18 +1001,18 @@
 
 	.artist {
 			font-family: "PingFangShangShangQianTi", sans-serif;
-		margin: 1.1rem 0 0;
-		font-size: 1.08rem;
+		margin: 0.4rem 0 0;
+		font-size: 2.1rem;
 		font-weight: 520;
-		letter-spacing: 0.18em;
+		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: rgba(255, 255, 255, 0.68);
 	}
 
 	.waveform {
-		margin-top: 2rem;
+		margin-top: 1.8rem;
 		width: 100%;
-		height: 52px;
+		height: 38px;
 		display: grid;
 		grid-template-columns: repeat(120, minmax(0, 1fr));
 		align-items: end;
@@ -1105,13 +1115,17 @@
 			justify-content: center;
 		}
 
+		.track-info {
+			padding-top: 0;
+		}
+
 		h1 {
 			max-width: 12ch;
-			font-size: clamp(1.55rem, 6vw, 2.1rem);
+			font-size: clamp(1.8rem, 7vw, 2.5rem);
 		}
 
 		.waveform {
-			height: 46px;
+			height: 32px;
 		}
 
 		footer {
