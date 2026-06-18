@@ -476,7 +476,13 @@
 		</div>
 	</aside>
 
-	<header class="logo" class:hidden={idleChromeHidden}>saltx</header>
+	<header class="logo" class:hidden={idleChromeHidden}>
+		<span>saltx</span>
+		<nav class="nav-links">
+			<a href="/" class="nav-link active">音乐</a>
+			<a href="/info" class="nav-link">动向</a>
+		</nav>
+	</header>
 
 	<main>
 		{#if loading}
@@ -822,11 +828,31 @@
 		top: 0;
 		left: 0;
 		right: 0;
-		z-index: 1;
+		z-index: 2;
 		padding: 2rem 2.5rem;
 		font-size: 0.82rem;
 		letter-spacing: 0.42em;
 		text-transform: uppercase;
+		color: var(--text-primary);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.nav-links {
+		display: flex;
+		gap: 1.5rem;
+		letter-spacing: 0.18em;
+	}
+
+	.nav-link {
+		color: var(--text-muted);
+		text-decoration: none;
+		transition: color 0.2s ease;
+	}
+
+	.nav-link:hover,
+	.nav-link.active {
 		color: var(--text-primary);
 	}
 

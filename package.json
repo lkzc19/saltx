@@ -47,6 +47,7 @@
 	},
 	"dependencies": {
 		"@iconify-svelte/line-md": "^1.0.6",
+		"@iconify-svelte/material-symbols-light": "^1.0.38",
 		"@lucide/svelte": "^1.17.0",
 		"bits-ui": "^2.18.1",
 		"howler": "^2.2.4",
