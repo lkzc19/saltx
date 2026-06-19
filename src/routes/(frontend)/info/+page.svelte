@@ -150,6 +150,7 @@
 
 	.carousel-wrapper {
 		position: relative;
+		z-index: 2;
 	}
 
 	.carousel {
@@ -223,7 +224,8 @@
 		left: 0;
 		right: 0;
 		height: 4rem;
-		z-index: 1;
+		z-index: 10;
+		user-select: none;
 	}
 
 	.carousel-header-text {
