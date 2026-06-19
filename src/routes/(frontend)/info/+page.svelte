@@ -33,22 +33,28 @@
 			<div class="carousel-section">
 				{#if announcements.length > 0}
 					{@const currentItem = announcements[currentSlide]}
-					<div class="carousel">
-						<div class="carousel-inner" style:transform="translateX(-{currentSlide * 100}%)">
-							{#each announcements as item (item.id)}
-								<div class="carousel-slide">
-									<img src={getR2Url(item.cover_file_key!)} alt={item.title} />
-								</div>
-							{/each}
+					<div class="carousel-wrapper">
+						<div class="carousel">
+							<div class="carousel-inner" style:transform="translateX(-{currentSlide * 100}%)">
+								{#each announcements as item (item.id)}
+									<div class="carousel-slide">
+										<img src={getR2Url(item.cover_file_key!)} alt={item.title} />
+									</div>
+								{/each}
+							</div>
+							{#if announcements.length > 1}
+								<button class="carousel-btn prev" onclick={prevSlide} aria-label="上一张">
+									<NavigateBeforeIcon class="h-24 w-24" />
+								</button>
+								<button class="carousel-btn next" onclick={nextSlide} aria-label="下一张">
+									<NavigateNextIcon class="h-24 w-24" />
+								</button>
+							{/if}
 						</div>
-						{#if announcements.length > 1}
-							<button class="carousel-btn prev" onclick={prevSlide} aria-label="上一张">
-								<NavigateBeforeIcon class="h-24 w-24" />
-							</button>
-							<button class="carousel-btn next" onclick={nextSlide} aria-label="下一张">
-								<NavigateNextIcon class="h-24 w-24" />
-							</button>
-						{/if}
+						<div class="carousel-corner top-left"></div>
+						<div class="carousel-corner top-right"></div>
+						<div class="carousel-corner bottom-left"></div>
+						<div class="carousel-corner bottom-right"></div>
 					</div>
 					{#if announcements.length > 1}
 						<div class="carousel-dots">
@@ -123,10 +129,10 @@
 
 	.about-content {
 		width: 100%;
-		max-width: 1000px;
+		max-width: 1100px;
 		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 3rem;
+		grid-template-columns: 1.2fr 1fr;
+		gap: 5rem;
 	}
 
 	/* 轮播图样式 */
@@ -135,12 +141,44 @@
 		top: 8rem;
 	}
 
+	.carousel-wrapper {
+		position: relative;
+	}
+
 	.carousel {
 		position: relative;
 		width: 100%;
 		aspect-ratio: 16/9;
 		overflow: hidden;
 		border: 1px solid var(--border-color);
+	}
+
+	.carousel-corner {
+		position: absolute;
+		width: 10px;
+		height: 10px;
+		background: rgba(255, 255, 255, 0.8);
+		pointer-events: none;
+	}
+
+	.carousel-corner.top-left {
+		top: -10px;
+		left: -10px;
+	}
+
+	.carousel-corner.top-right {
+		top: -10px;
+		right: -10px;
+	}
+
+	.carousel-corner.bottom-left {
+		bottom: -10px;
+		left: -10px;
+	}
+
+	.carousel-corner.bottom-right {
+		bottom: -10px;
+		right: -10px;
 	}
 
 	.carousel-inner {
@@ -154,10 +192,21 @@
 		position: relative;
 	}
 
+	.carousel-slide {
+		min-width: 100%;
+		position: relative;
+		overflow: hidden;
+	}
+
 	.carousel-slide img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
+		transition: transform 0.5s ease;
+	}
+
+	.carousel:hover .carousel-slide img {
+		transform: scale(1.15);
 	}
 
 	.carousel-btn {
