@@ -33,7 +33,13 @@
 			<div class="carousel-section">
 				{#if announcements.length > 0}
 					{@const currentItem = announcements[currentSlide]}
-					<div class="carousel-header-text">给生活加点盐</div>
+					<div class="carousel-header-wrapper">
+						<div class="carousel-header-text">
+							<span>给生活加点盐</span>
+							<span>给生活加点盐</span>
+							<span>给生活加点盐</span>
+						</div>
+					</div>
 					<div class="carousel-wrapper">
 						<div class="carousel">
 							<div class="carousel-inner" style:transform="translateX(-{currentSlide * 100}%)">
@@ -210,16 +216,39 @@
 		transform: scale(1.15);
 	}
 
+	.carousel-header-wrapper {
+		overflow: hidden;
+		position: absolute;
+		top: -3rem;
+		left: 0;
+		right: 0;
+		height: 4rem;
+		z-index: 1;
+	}
+
 	.carousel-header-text {
+		display: inline-flex;
 		font-size: 3rem;
 		font-weight: 900;
 		color: transparent;
 		-webkit-text-stroke: 1px rgba(255, 255, 255, 0.5);
 		letter-spacing: 0.1em;
-		margin-bottom: -1.5rem;
-		text-align: center;
-		position: relative;
-		z-index: 1;
+		white-space: nowrap;
+		animation: scroll-left 8s linear infinite;
+	}
+
+	.carousel-header-text span {
+		flex-shrink: 0;
+		padding-right: 3rem;
+	}
+
+	@keyframes scroll-left {
+		0% {
+			transform: translateX(0);
+		}
+		100% {
+			transform: translateX(-33.333%);
+		}
 	}
 
 	.carousel-wrapper {
