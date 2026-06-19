@@ -33,6 +33,7 @@
 			<div class="carousel-section">
 				{#if announcements.length > 0}
 					{@const currentItem = announcements[currentSlide]}
+					<div class="carousel-header-text">给生活加点盐</div>
 					<div class="carousel-wrapper">
 						<div class="carousel">
 							<div class="carousel-inner" style:transform="translateX(-{currentSlide * 100}%)">
@@ -207,6 +208,23 @@
 
 	.carousel:hover .carousel-slide img {
 		transform: scale(1.15);
+	}
+
+	.carousel-header-text {
+		font-size: 3rem;
+		font-weight: 900;
+		color: transparent;
+		-webkit-text-stroke: 1px rgba(255, 255, 255, 0.5);
+		letter-spacing: 0.1em;
+		margin-bottom: -1.5rem;
+		text-align: center;
+		position: relative;
+		z-index: 1;
+	}
+
+	.carousel-wrapper {
+		position: relative;
+		z-index: 2;
 	}
 
 	.carousel-btn {
