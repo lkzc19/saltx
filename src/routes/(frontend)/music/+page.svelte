@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import { resolve } from '$app/paths';
 	import ChevronDoubleLeftIcon from '@iconify-svelte/line-md/chevron-double-left';
 	import ChevronDoubleRightIcon from '@iconify-svelte/line-md/chevron-double-right';
 	import PauseIcon from '@iconify-svelte/line-md/pause';
@@ -477,14 +476,6 @@
 		</div>
 	</aside>
 
-	<header class="logo" class:hidden={idleChromeHidden}>
-		<span>saltx</span>
-		<nav class="nav-links">
-			<a href={resolve('/music', {})} class="nav-link active">音乐</a>
-			<a href={resolve('/info', {})} class="nav-link">动向</a>
-		</nav>
-	</header>
-
 	<main>
 		{#if loading}
 			<div class="empty-state">正在装载音乐列表...</div>
@@ -810,66 +801,31 @@
 		color: var(--text-secondary);
 	}
 
-	header,
 	footer,
 	.left-chrome {
 		transition: opacity 0.28s ease;
 		will-change: opacity;
 	}
 
-	header.hidden,
 	footer.hidden,
 	.left-chrome.hidden {
 		opacity: 0;
 		pointer-events: none;
 	}
 
-	header {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		z-index: 2;
-		padding: 2.5rem 4rem;
-		font-size: 0.92rem;
-		letter-spacing: 0.42em;
-		text-transform: uppercase;
-		color: var(--text-primary);
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-	}
-
-	.nav-links {
-		display: flex;
-		gap: 2rem;
-		letter-spacing: 0.22em;
-	}
-
-	.nav-link {
-		color: var(--text-muted);
-		text-decoration: none;
-		transition: color 0.2s ease;
-	}
-
-	.nav-link:hover,
-	.nav-link.active {
-		color: var(--text-primary);
-	}
-
 	main {
 		position: relative;
 		z-index: 1;
 		min-height: 100vh;
-		padding: 6.8rem 2.5rem 4.8rem;
+		padding: 6.8rem 6rem 4.8rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
 	.stage {
-		--panel-width: clamp(320px, 32vw, 360px);
-		--panel-gap: calc(var(--panel-width) * 0.3);
+		--panel-width: clamp(360px, 38vw, 440px);
+		--panel-gap: calc(var(--panel-width) * 0.2);
 		width: min(calc(var(--panel-width) * 2 + var(--panel-gap)), 100%);
 		display: grid;
 		grid-template-columns: repeat(2, var(--panel-width));
@@ -1162,10 +1118,6 @@
 
 		.track-drawer.open {
 			transform: translateY(0);
-		}
-
-		header {
-			padding: 1.5rem 1.25rem;
 		}
 
 		main {

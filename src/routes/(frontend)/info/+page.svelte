@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { getR2Url } from '$lib/utils/music';
-	import { resolve } from '$app/paths';
 	import { Accordion } from 'bits-ui';
 	import { ChevronDown } from '@lucide/svelte';
 	import NavigateBeforeIcon from '@iconify-svelte/material-symbols-light/navigate-before';
@@ -28,14 +27,6 @@
 </svelte:head>
 
 <div class="about-page">
-	<header class="logo">
-		<a href={resolve('/music', {})}>saltx</a>
-		<nav class="nav-links">
-			<a href={resolve('/music', {})} class="nav-link">音乐</a>
-			<a href={resolve('/info', {})} class="nav-link active">动向</a>
-		</nav>
-	</header>
-
 	<main>
 		<div class="about-content">
 			<!-- 左侧轮播图 -->
@@ -122,47 +113,9 @@
 		color: var(--text-primary);
 	}
 
-	header {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		z-index: 1;
-		padding: 2.5rem 4rem;
-		font-size: 0.92rem;
-		letter-spacing: 0.42em;
-		text-transform: uppercase;
-		color: var(--text-primary);
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-	}
-
-	header a {
-		color: inherit;
-		text-decoration: none;
-	}
-
-	.nav-links {
-		display: flex;
-		gap: 2rem;
-		letter-spacing: 0.22em;
-	}
-
-	.nav-link {
-		color: var(--text-muted);
-		text-decoration: none;
-		transition: color 0.2s ease;
-	}
-
-	.nav-link:hover,
-	.nav-link.active {
-		color: var(--text-primary);
-	}
-
 	main {
 		min-height: 100vh;
-		padding: 8rem 4rem 4rem;
+		padding: 8rem 6rem 4rem;
 		display: flex;
 		align-items: flex-start;
 		justify-content: center;
@@ -170,7 +123,7 @@
 
 	.about-content {
 		width: 100%;
-		max-width: 1200px;
+		max-width: 1000px;
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 3rem;
