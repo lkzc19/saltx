@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import ChevronDoubleLeftIcon from '@iconify-svelte/line-md/chevron-double-left';
 	import ChevronDoubleRightIcon from '@iconify-svelte/line-md/chevron-double-right';
 	import PauseIcon from '@iconify-svelte/line-md/pause';
@@ -479,8 +480,8 @@
 	<header class="logo" class:hidden={idleChromeHidden}>
 		<span>saltx</span>
 		<nav class="nav-links">
-			<a href="/" class="nav-link active">音乐</a>
-			<a href="/info" class="nav-link">动向</a>
+			<a href={resolve('/music', {})} class="nav-link active">音乐</a>
+			<a href={resolve('/info', {})} class="nav-link">动向</a>
 		</nav>
 	</header>
 
@@ -829,8 +830,8 @@
 		left: 0;
 		right: 0;
 		z-index: 2;
-		padding: 2rem 2.5rem;
-		font-size: 0.82rem;
+		padding: 2.5rem 4rem;
+		font-size: 0.92rem;
 		letter-spacing: 0.42em;
 		text-transform: uppercase;
 		color: var(--text-primary);
@@ -841,8 +842,8 @@
 
 	.nav-links {
 		display: flex;
-		gap: 1.5rem;
-		letter-spacing: 0.18em;
+		gap: 2rem;
+		letter-spacing: 0.22em;
 	}
 
 	.nav-link {

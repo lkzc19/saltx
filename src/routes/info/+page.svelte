@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getR2Url } from '$lib/utils/music';
+	import { resolve } from '$app/paths';
 	import { Accordion } from 'bits-ui';
 	import { ChevronDown } from '@lucide/svelte';
 	import NavigateBeforeIcon from '@iconify-svelte/material-symbols-light/navigate-before';
@@ -28,10 +29,10 @@
 
 <div class="about-page">
 	<header class="logo">
-		<a href="/">saltx</a>
+		<a href={resolve('/music', {})}>saltx</a>
 		<nav class="nav-links">
-			<a href="/" class="nav-link">音乐</a>
-			<a href="/info" class="nav-link active">动向</a>
+			<a href={resolve('/music', {})} class="nav-link">音乐</a>
+			<a href={resolve('/info', {})} class="nav-link active">动向</a>
 		</nav>
 	</header>
 
@@ -127,8 +128,8 @@
 		left: 0;
 		right: 0;
 		z-index: 1;
-		padding: 2rem 2.5rem;
-		font-size: 0.82rem;
+		padding: 2.5rem 4rem;
+		font-size: 0.92rem;
 		letter-spacing: 0.42em;
 		text-transform: uppercase;
 		color: var(--text-primary);
@@ -144,8 +145,8 @@
 
 	.nav-links {
 		display: flex;
-		gap: 1.5rem;
-		letter-spacing: 0.18em;
+		gap: 2rem;
+		letter-spacing: 0.22em;
 	}
 
 	.nav-link {
