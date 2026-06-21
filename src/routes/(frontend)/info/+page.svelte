@@ -34,11 +34,7 @@
 				{#if announcements.length > 0}
 					{@const currentItem = announcements[currentSlide]}
 					<div class="carousel-header-wrapper">
-						<div class="carousel-header-text">
-							<span>给生活加点盐</span>
-							<span>给生活加点盐</span>
-							<span>给生活加点盐</span>
-						</div>
+						<div class="carousel-header-text">给生活加点盐</div>
 					</div>
 					<div class="carousel-wrapper">
 						<div class="carousel">
@@ -155,8 +151,8 @@
 
 	.carousel {
 		position: relative;
-		width: 100%;
-		aspect-ratio: 16/9;
+		width: 560px;
+		height: 315px;
 		overflow: hidden;
 		border: 1px solid var(--border-color);
 	}
@@ -218,39 +214,22 @@
 	}
 
 	.carousel-header-wrapper {
-		overflow: hidden;
-		position: absolute;
-		top: -3rem;
-		left: 0;
-		right: 0;
-		height: 4rem;
+		position: relative;
+		width: 560px;
 		z-index: 10;
 		user-select: none;
 	}
 
 	.carousel-header-text {
-		display: inline-flex;
 		font-size: 3rem;
 		font-weight: 900;
+		line-height: 1;
 		color: transparent;
 		-webkit-text-stroke: 1px rgba(255, 255, 255, 0.5);
 		letter-spacing: 0.1em;
 		white-space: nowrap;
-		animation: scroll-left 8s linear infinite;
-	}
-
-	.carousel-header-text span {
-		flex-shrink: 0;
-		padding-right: 3rem;
-	}
-
-	@keyframes scroll-left {
-		0% {
-			transform: translateX(0);
-		}
-		100% {
-			transform: translateX(-33.333%);
-		}
+		text-align: center;
+		margin: 0;
 	}
 
 	.carousel-wrapper {
