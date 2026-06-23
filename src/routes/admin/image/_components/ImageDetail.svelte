@@ -298,7 +298,7 @@
 											<div>
 												<span class="text-[10px] text-text-disabled">自动</span>
 												<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
-													{#each bgColors.auto as entry, i}
+													{#each bgColors.auto as entry, i (entry.color)}
 														<span class="relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.auto.length - 1} style:background-color={entry.color}>
 															{#if bgColors.active === entry.color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
 														</span>
@@ -310,7 +310,7 @@
 											<div>
 												<span class="text-[10px] text-text-disabled">手动</span>
 												<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
-													{#each bgColors.manual as color, i}
+													{#each bgColors.manual as color, i (color)}
 														<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.manual.length - 1} style:background-color={color} onclick={() => removeManualColor(i)} aria-label={"移除 " + color}>
 															<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
 																<svg class="h-3 w-3 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -359,7 +359,7 @@
 										<div>
 											<span class="text-[10px] text-text-disabled">自动</span>
 											<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
-												{#each bgColors.auto as entry, i}
+												{#each bgColors.auto as entry, i (entry.color)}
 													<span class="relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.auto.length - 1} style:background-color={entry.color}>
 														{#if bgColors.active === entry.color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
 													</span>
@@ -371,7 +371,7 @@
 										<div>
 											<span class="text-[10px] text-text-disabled">手动</span>
 											<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
-												{#each bgColors.manual as color, i}
+												{#each bgColors.manual as color, i (color)}
 													<button type="button" class="group/swatch relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.manual.length - 1} style:background-color={color} onclick={() => removeManualColor(i)} aria-label={"移除 " + color}>
 														<span class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/swatch:opacity-100">
 															<svg class="h-3 w-3 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -400,13 +400,13 @@
 										<Select.Portal>
 											<Select.Content class="z-50 max-h-60 overflow-hidden rounded-md border border-border-primary bg-fg shadow-lg" style="width: var(--bits-floating-anchor-width)">
 												<Select.Viewport class="p-1">
-													{#each bgColors.auto as entry}
+													{#each bgColors.auto as entry (entry.color)}
 														<Select.Item value={entry.color} label={"自动 - " + entry.color} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-text-primary outline-none data-highlighted:bg-bg-secondary-hover">
 															<span class="inline-block h-4 w-4 rounded-sm border border-border-primary" style:background-color={entry.color}></span>
 															自动 - {entry.color}
 														</Select.Item>
 													{/each}
-													{#each bgColors.manual as color}
+													{#each bgColors.manual as color (color)}
 														<Select.Item value={color} label={"手动 - " + color} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-text-primary outline-none data-highlighted:bg-bg-secondary-hover">
 															<span class="inline-block h-4 w-4 rounded-sm border border-border-primary" style:background-color={color}></span>
 															手动 - {color}
@@ -438,7 +438,7 @@
 										<div>
 											<span class="text-[10px] text-text-disabled">自动</span>
 											<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
-												{#each viewBg.auto as entry, i}
+												{#each viewBg.auto as entry, i (entry.color)}
 													<span class="relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === viewBg.auto.length - 1} style:background-color={entry.color}>
 														{#if viewBg.active === entry.color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
 													</span>
@@ -450,7 +450,7 @@
 										<div>
 											<span class="text-[10px] text-text-disabled">手动</span>
 											<div class="mt-1 flex h-6 w-full rounded overflow-hidden">
-												{#each viewBg.manual as color, i}
+												{#each viewBg.manual as color, i (color)}
 													<span class="relative h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === viewBg.manual.length - 1} style:background-color={color}>
 														{#if viewBg.active === color}<span class="absolute inset-0 border-2 border-black"></span>{/if}
 													</span>
@@ -558,7 +558,7 @@
 			{#if bgColors.manual.length > 0}
 				<div class="border-t border-border-primary p-4">
 					<div class="flex h-8 w-full rounded overflow-hidden">
-						{#each bgColors.manual as color, i}
+						{#each bgColors.manual as color, i (color)}
 							<span class="h-full flex-1" class:rounded-l={i === 0} class:rounded-r={i === bgColors.manual.length - 1} style:background-color={color}></span>
 						{/each}
 					</div>

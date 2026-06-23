@@ -69,7 +69,7 @@
 				{@const bg = parseBg(item.background_colors)}
 				{@const colors = allColors(bg)}
 				<div class="relative flex h-8 w-full rounded">
-					{#each colors as color, i}
+					{#each colors as color, i (color)}
 						<span
 							class="group/swatch relative h-full flex-1"
 							class:rounded-l={i === 0}

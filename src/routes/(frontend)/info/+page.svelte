@@ -9,7 +9,6 @@
 
 	let currentSlide = $state(0);
 	const announcements = $derived(data.items.filter((a) => a.cover_file_key));
-	const pinnedItems = $derived(data.items.filter((a) => a.is_pinned === 'true'));
 
 	function nextSlide() {
 		if (announcements.length === 0) return;
@@ -61,7 +60,7 @@
 					</div>
 					{#if announcements.length > 1}
 						<div class="carousel-dots">
-							{#each announcements as _, i}
+							{#each announcements as _, i (i)}
 								<button
 									class="dot"
 									class:active={i === currentSlide}
@@ -231,14 +230,15 @@
 		white-space: nowrap;
 		text-align: center;
 		margin: 0;
-		display: inline-flex;
-		animation: scroll-left 8s linear infinite;
 	}
 
 	.carousel-header-text::before,
 	.carousel-header-text::after {
 		content: "给生活加点盐";
-		padding-left: 3rem;
+		display: inline-block;
+		width: 560px;
+		animation: scroll-left 8s linear infinite;
+		will-change: transform;
 	}
 
 	@keyframes scroll-left {
@@ -246,7 +246,7 @@
 			transform: translateX(0);
 		}
 		100% {
-			transform: translateX(-50%);
+			transform: translateX(-100%);
 		}
 	}
 

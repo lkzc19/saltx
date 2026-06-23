@@ -20,7 +20,7 @@
 	<table class="w-full border-t border-l border-border-primary text-sm">
 		<thead>
 			<tr class="h-12 bg-fg text-left text-text-primary">
-				{#each columns as col, i}
+				{#each columns as col, i (i)}
 					<th
 						class="border-b border-r border-border-primary px-4 {col.headerClass ?? ''}"
 						style={col.width ? `width:${col.width}` : ''}
