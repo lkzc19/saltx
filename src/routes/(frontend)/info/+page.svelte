@@ -215,13 +215,14 @@
 	.carousel-header-wrapper {
 		position: relative;
 		width: 560px;
+		height: 3.375rem;
 		overflow: hidden;
 		z-index: 10;
 		user-select: none;
 	}
 
 	.carousel-header-text {
-		font-size: 3rem;
+		font-size: 4.5rem;
 		font-weight: 900;
 		line-height: 1;
 		color: transparent;
