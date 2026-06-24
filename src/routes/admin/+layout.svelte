@@ -11,11 +11,11 @@
 
 	let { children } = $props();
 
-	const navItems: { icon: typeof LayoutDashboard; label: string; href: '/admin/dashboard' | '/admin/music' | '/admin/image' | '/admin/announcement' }[] = [
+	const navItems: { icon: typeof LayoutDashboard; label: string; href: '/admin/dashboard' | '/admin/music' | '/admin/image' | '/admin/info' }[] = [
 		{ icon: LayoutDashboard, label: '仪表盘', href: '/admin/dashboard' },
 		{ icon: Music, label: '音乐管理', href: '/admin/music' },
 		{ icon: Image, label: '图片管理', href: '/admin/image' },
-		{ icon: Megaphone, label: '公告管理', href: '/admin/announcement' }
+		{ icon: Megaphone, label: '动向管理', href: '/admin/info' }
 	];
 
 

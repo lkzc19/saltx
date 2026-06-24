@@ -27,6 +27,8 @@
 	let editTitle = $state('');
 	let editContent = $state('');
 	let editCoverFileKey = $state<string | null>(null);
+	let editCategory = $state('general');
+	let editIsRecommended = $state(false);
 
 	let isAdding = $derived(adminState.addingAnnouncement);
 
@@ -36,6 +38,7 @@
 
 	function clearCover() {
 		editCoverFileKey = null;
+		editCategory = 'general';
 	}
 
 	$effect(() => {
@@ -43,6 +46,8 @@
 			editTitle = '';
 			editContent = '';
 			editCoverFileKey = null;
+			editCategory = 'general';
+			editIsRecommended = false;
 			error = '';
 			editing = true;
 		}
@@ -53,6 +58,8 @@
 		editTitle = announcement.title;
 		editContent = announcement.content ?? '';
 		editCoverFileKey = announcement.cover_file_key;
+		editCategory = announcement.category;
+		editIsRecommended = announcement.is_recommended === 'true';
 		error = '';
 		editing = true;
 	}
@@ -83,9 +90,11 @@
 			formData.set('title', editTitle);
 			formData.set('content', editContent);
 			formData.set('cover_file_key', editCoverFileKey ?? '');
+			formData.set('category', editCategory);
+			formData.set('is_recommended', editIsRecommended ? 'true' : 'false');
 
 			if (isAdding) {
-				const res = await fetch('/api/admin/announcement', { method: 'POST', body: formData });
+				const res = await fetch('/api/admin/info', { method: 'POST', body: formData });
 				if (!res.ok) {
 					const body = (await res.json()) as { error?: string };
 					throw new Error(body.error ?? '创建失败');
@@ -94,7 +103,7 @@
 				oncreated(created);
 			} else {
 				if (!announcement) return;
-				const res = await fetch(`/api/admin/announcement?id=${announcement.id}`, { method: 'PUT', body: formData });
+				const res = await fetch(`/api/admin/info?id=${announcement.id}`, { method: 'PUT', body: formData });
 				if (!res.ok) {
 					const body = (await res.json()) as { error?: string };
 					throw new Error(body.error ?? '保存失败');
@@ -113,9 +122,9 @@
 	}
 
 	async function handleDelete() {
-		if (!announcement || !confirm(`确定要删除「${announcement.title}」吗？`)) return;
+		if (!announcement || !confirm(`确定要删除动向「${announcement.title}」吗？`)) return;
 
-		const res = await fetch(`/api/admin/announcement?id=${announcement.id}`, { method: 'DELETE' });
+		const res = await fetch(`/api/admin/info?id=${announcement.id}`, { method: 'DELETE' });
 		if (!res.ok) {
 			const body = (await res.json()) as { error?: string };
 			error = body.error ?? '删除失败';
@@ -129,11 +138,11 @@
 	<aside class="flex w-80 shrink-0 flex-col overflow-hidden border-l border-border-primary bg-fg">
 		<!-- Header -->
 		<div class="flex items-center justify-between border-b border-border-primary px-4 py-4">
-			<h3 class="text-sm font-semibold text-text-primary">{isAdding ? '新增公告' : '公告详情'}</h3>
+			<h3 class="text-sm font-semibold text-text-primary">{isAdding ? '新增动向' : '动向详情'}</h3>
 			<div class="flex items-center gap-1">
 				<button
 					onclick={close}
-					class="flex h-7 w-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text-primary"
+					class="flex size-7 items-center justify-center rounded text-text-disabled transition-colors hover:bg-border hover:text-text-primary"
 					aria-label="关闭"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,6 +214,33 @@
 							/>
 						</div>
 
+						<!-- 分类 -->
+						<div>
+							<label for="detail-category" class="mb-1.5 block text-xs text-text-disabled">分类</label>
+							<input
+								id="detail-category"
+								type="text"
+								bind:value={editCategory}
+								placeholder="例如：音乐、活动"
+								class="h-9 w-full rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
+							/>
+						</div>
+
+						<!-- 推荐 -->
+						<div class="flex items-center justify-between">
+							<span class="text-xs text-text-disabled">推荐</span>
+							<button
+								type="button"
+								onclick={() => (editIsRecommended = !editIsRecommended)}
+								aria-label="推荐"
+								class="relative h-5 w-9 rounded-full transition-colors {editIsRecommended ? 'bg-cf' : 'bg-border'}"
+							>
+								<span
+									class="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform {editIsRecommended ? 'translate-x-4' : 'translate-x-0.5'}"
+								></span>
+							</button>
+						</div>
+
 						<!-- 内容 -->
 						<div>
 							<label for="detail-content" class="mb-1.5 block text-xs text-text-disabled">内容</label>
@@ -247,6 +283,14 @@
 								<p class="mt-1 text-sm text-text-primary whitespace-pre-wrap">{announcement.content}</p>
 							</div>
 						{/if}
+						<div>
+							<span class="text-xs text-text-disabled">分类</span>
+							<p class="mt-1 text-sm text-text-primary">{announcement.category === 'music' ? '音乐' : announcement.category === 'activity' ? '活动' : '通用'}</p>
+						</div>
+						<div>
+							<span class="text-xs text-text-disabled">推荐</span>
+							<p class="mt-1 text-sm text-text-primary">{announcement.is_recommended === 'true' ? '是' : '否'}</p>
+						</div>
 						<div>
 							<span class="text-xs text-text-disabled">创建时间</span>
 							<p class="mt-1 text-xs text-text-disabled">{formatDate(announcement.created_at)}</p>

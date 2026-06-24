@@ -12,11 +12,11 @@ export const PUT: RequestHandler = async ({ url, platform }) => {
 	const existing = await db.select().from(announcement).where(eq(announcement.id, id)).get();
 	if (!existing) return json({ error: '公告不存在' }, { status: 404 });
 
-	const newPinned = existing.is_pinned === 'true' ? 'false' : 'true';
+	const newPinned = existing.is_recommended === 'true' ? 'false' : 'true';
 
 	const record = await db
 		.update(announcement)
-		.set({ is_pinned: newPinned, updated_at: new Date().toISOString() })
+		.set({ is_recommended: newPinned, updated_at: new Date().toISOString() })
 		.where(eq(announcement.id, id))
 		.returning()
 		.get();

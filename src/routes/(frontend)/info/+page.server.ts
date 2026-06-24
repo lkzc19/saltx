@@ -5,11 +5,19 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ platform }) => {
 	const db = getDb(platform!.env.DB);
-	const items = await db
+
+	const featured = await db
 		.select()
 		.from(announcement)
-		.orderBy(desc(announcement.is_pinned), desc(announcement.created_at))
+		.where(eq(announcement.is_recommended, 'true'))
+		.orderBy(desc(announcement.created_at))
 		.all();
 
-	return { items };
+	const allItems = await db
+		.select()
+		.from(announcement)
+		.orderBy(desc(announcement.created_at))
+		.all();
+
+	return { featured, allItems };
 };

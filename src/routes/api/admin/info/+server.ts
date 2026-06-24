@@ -10,7 +10,8 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	const title = formData.get('title')?.toString();
 	const content = formData.get('content')?.toString() || null;
 	const coverFileKey = formData.get('cover_file_key')?.toString() || null;
-	const isPinned = formData.get('is_pinned')?.toString() ?? 'false';
+	const category = formData.get('category')?.toString() ?? 'general';
+	const isRecommended = formData.get('is_recommended')?.toString() ?? 'false';
 
 	if (!title) {
 		return json({ error: '缺少必填字段: title' }, { status: 400 });
@@ -26,7 +27,8 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			title,
 			content,
 			cover_file_key: coverFileKey,
-			is_pinned: isPinned
+			category,
+			is_recommended: isRecommended
 		})
 		.returning()
 		.get();
@@ -46,13 +48,15 @@ export const PUT: RequestHandler = async ({ url, request, platform }) => {
 	const title = formData.get('title')?.toString();
 	const content = formData.get('content')?.toString();
 	const coverFileKey = formData.get('cover_file_key')?.toString();
-	const isPinned = formData.get('is_pinned')?.toString();
+	const category = formData.get('category')?.toString();
+	const isRecommended = formData.get('is_recommended')?.toString();
 
 	const updates: Record<string, string | null> = {};
 	if (title) updates.title = title;
 	if (content !== undefined) updates.content = content || null;
 	if (coverFileKey !== undefined) updates.cover_file_key = coverFileKey || null;
-	if (isPinned !== undefined) updates.is_pinned = isPinned;
+	if (category !== undefined) updates.category = category;
+	if (isRecommended !== undefined) updates.is_recommended = isRecommended;
 	updates.updated_at = new Date().toISOString();
 
 	const record = await db

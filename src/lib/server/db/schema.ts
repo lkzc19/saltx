@@ -43,7 +43,8 @@ export const announcement = sqliteTable('announcement', {
 	title: text('title').notNull(),
 	content: text('content'),
 	cover_file_key: text('cover_file_key'),
-	is_pinned: text('is_pinned')
+	category: text('category').notNull().$defaultFn(() => 'general'),
+	is_recommended: text('is_recommended')
 		.notNull()
 		.$defaultFn(() => 'false'),
 	created_at: text('created_at')

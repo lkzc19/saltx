@@ -34,7 +34,7 @@
 	}
 
 	async function handleDelete(id: string) {
-		if (!confirm('确定要删除这条公告吗？')) return;
+		if (!confirm('确定要删除这条动向吗？')) return;
 		await fetch(`/api/admin/announcement?id=${id}`, { method: 'DELETE' });
 		if (adminState.selectedAnnouncement?.id === id) {
 			adminState.selectedAnnouncement = null;
@@ -42,14 +42,14 @@
 		invalidateAll();
 	}
 
-	async function handleTogglePin(id: string) {
-		await fetch(`/api/admin/announcement/pin?id=${id}`, { method: 'PUT' });
+	async function handleToggleRecommended(id: string) {
+		await fetch(`/api/admin/info/pin?id=${id}`, { method: 'PUT' });
 		invalidateAll();
 	}
 </script>
 
 <svelte:head>
-	<title>公告管理 - SALT X</title>
+	<title>动向管理 - SALT X</title>
 </svelte:head>
 
 <div class="flex h-full flex-col">
@@ -62,7 +62,7 @@
 					onselect={(item) => (adminState.selectedAnnouncement = item)}
 					onadd={() => (adminState.addingAnnouncement = true)}
 					ondelete={handleDelete}
-					ontogglepin={handleTogglePin}
+					ontogglerecommended={handleToggleRecommended}
 				/>
 			</div>
 			</Scrollbar>

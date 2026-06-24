@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { getR2Url } from '$lib/utils/music';
-	import { Accordion } from 'bits-ui';
-	import { ChevronDown } from '@lucide/svelte';
 	import NavigateBeforeIcon from '@iconify-svelte/material-symbols-light/navigate-before';
 	import NavigateNextIcon from '@iconify-svelte/material-symbols-light/navigate-next';
 
 	let { data } = $props();
 
 	let currentSlide = $state(0);
-	const announcements = $derived(data.items.filter((a) => a.cover_file_key));
+	const announcements = $derived((data.featured ?? []).filter((a) => a.cover_file_key));
 
 	function nextSlide() {
 		if (announcements.length === 0) return;
@@ -83,27 +81,20 @@
 				{/if}
 			</div>
 
-			<!-- 右侧手风琴 -->
-			<div class="accordion-section">
-				<Accordion.Root type="single" class="accordion-root">
-					{#each data.items as item (item.id)}
-						<Accordion.Item value={item.id} class="accordion-item">
-							<Accordion.Header class="accordion-header">
-								<Accordion.Trigger class="accordion-trigger">
-									<span>{item.title}</span>
-									<ChevronDown class="accordion-chevron h-4 w-4" />
-								</Accordion.Trigger>
-							</Accordion.Header>
-							<Accordion.Content class="accordion-content">
-								{#if item.content}
-									<p class="whitespace-pre-wrap">{item.content}</p>
-								{:else}
-									<p class="text-text-disabled">暂无内容</p>
-								{/if}
-							</Accordion.Content>
-						</Accordion.Item>
-					{/each}
-				</Accordion.Root>
+			<!-- 右侧列表 -->
+			<div class="list-section">
+				{#each (data.allItems ?? []) as item (item.id)}
+					<div class="list-item">
+						<div class="list-item-meta">
+							<span class="list-item-category">{item.category}</span>
+							<span class="list-item-date">{new Date(item.created_at).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
+						</div>
+						<h3 class="list-item-title">{item.title}</h3>
+					</div>
+				{/each}
+				{#if (data.allItems ?? []).length === 0}
+					<p class="list-empty">暂无公告</p>
+				{/if}
 			</div>
 		</div>
 	</main>
@@ -349,86 +340,60 @@
 		color: var(--text-muted);
 	}
 
-	/* 手风琴样式 */
-	.accordion-section {
+	/* 列表样式 */
+	.list-section {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
 		padding-top: 1rem;
 	}
 
-	:global(.accordion-root) {
-		width: 100%;
-	}
-
-	:global(.accordion-item) {
+	.list-item {
+		padding-bottom: 1.5rem;
 		border-bottom: 1px solid var(--border-color);
+		transition: opacity 0.2s ease;
 	}
 
-	:global(.accordion-header) {
-		margin: 0;
+	.list-item:last-child {
+		border-bottom: none;
 	}
 
-	:global(.accordion-trigger) {
-		width: 100%;
+	.list-item:hover {
+		opacity: 0.7;
+	}
+
+	.list-item-meta {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		padding: 1.2rem 0;
-		background: none;
-		border: none;
-		color: var(--text-primary);
-		font-size: 1rem;
-		cursor: pointer;
-		text-align: left;
-		transition: color 0.2s ease;
+		gap: 0.75rem;
+		margin-bottom: 0.5rem;
 	}
 
-	:global(.accordion-trigger:hover) {
-		color: var(--text-secondary);
+	.list-item-category {
+		font-size: 0.65rem;
+		font-weight: 600;
+		color: var(--text-muted);
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
 	}
 
-	:global(.accordion-trigger[data-state="open"] .accordion-chevron) {
-		transform: rotate(180deg);
-	}
-
-	:global(.accordion-chevron) {
-		transition: transform 0.2s ease;
+	.list-item-date {
+		font-size: 0.75rem;
 		color: var(--text-muted);
 	}
 
-	:global(.accordion-content) {
-		padding-bottom: 1.2rem;
-		color: var(--text-secondary);
-		font-size: 0.9rem;
-		line-height: 1.6;
+	.list-item-title {
+		font-size: 1rem;
+		font-weight: 500;
+		color: var(--text-primary);
+		margin: 0 0 0.5rem;
+		line-height: 1.4;
 	}
 
-	:global(.accordion-content[data-state="open"]) {
-		animation: slideDown 0.2s ease;
-	}
 
-	:global(.accordion-content[data-state="closed"]) {
-		animation: slideUp 0.2s ease;
-	}
-
-	@keyframes slideDown {
-		from {
-			height: 0;
-			opacity: 0;
-		}
-		to {
-			height: var(--bits-accordion-content-height);
-			opacity: 1;
-		}
-	}
-
-	@keyframes slideUp {
-		from {
-			height: var(--bits-accordion-content-height);
-			opacity: 1;
-		}
-		to {
-			height: 0;
-			opacity: 0;
-		}
+	.list-empty {
+		font-size: 0.875rem;
+		color: var(--text-muted);
 	}
 
 	@media (max-width: 768px) {
