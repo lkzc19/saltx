@@ -27,7 +27,7 @@
 	let editTitle = $state('');
 	let editContent = $state('');
 	let editCoverFileKey = $state<string | null>(null);
-	let editCategory = $state('general');
+	let editCategory = $state('');
 	let editIsRecommended = $state(false);
 
 	let isAdding = $derived(adminState.addingAnnouncement);
@@ -38,7 +38,6 @@
 
 	function clearCover() {
 		editCoverFileKey = null;
-		editCategory = 'general';
 	}
 
 	$effect(() => {
@@ -46,7 +45,6 @@
 			editTitle = '';
 			editContent = '';
 			editCoverFileKey = null;
-			editCategory = 'general';
 			editIsRecommended = false;
 			error = '';
 			editing = true;
@@ -113,7 +111,14 @@
 			}
 
 			editing = false;
-			if (isAdding) adminState.addingAnnouncement = false;
+			if (isAdding) {
+				adminState.addingAnnouncement = false;
+				editTitle = '';
+				editContent = '';
+				editCoverFileKey = null;
+				editCategory = '';
+				editIsRecommended = false;
+			}
 		} catch (err) {
 			error = (err as Error).message;
 		} finally {
@@ -221,7 +226,7 @@
 								id="detail-category"
 								type="text"
 								bind:value={editCategory}
-								placeholder="例如：音乐、活动"
+								
 								class="h-9 w-full rounded-md border border-border-primary bg-bg-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
 							/>
 						</div>
@@ -233,7 +238,7 @@
 								type="button"
 								onclick={() => (editIsRecommended = !editIsRecommended)}
 								aria-label="推荐"
-								class="relative h-5 w-9 rounded-full transition-colors {editIsRecommended ? 'bg-cf' : 'bg-border'}"
+								class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {editIsRecommended ? 'bg-cf' : 'bg-border-primary'}"
 							>
 								<span
 									class="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform {editIsRecommended ? 'translate-x-4' : 'translate-x-0.5'}"

@@ -13,40 +13,58 @@
 	let idleHidden = $state(false);
 	let idleTimer: ReturnType<typeof setTimeout> | undefined;
 	let mediaQuery: MediaQueryList | null = null;
-
-	function resetIdleTimer() {
-		if (!mediaQuery?.matches) return;
-		idleHidden = false;
-		if (idleTimer) clearTimeout(idleTimer);
-		idleTimer = setTimeout(() => {
-			idleHidden = true;
-		}, IDLE_TIMEOUT);
-	}
+	let isMobile = $state(false);
 
 	onMount(() => {
 		mediaQuery = window.matchMedia('(pointer:fine)');
+		isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+		const mobileQuery = window.matchMedia('(max-width: 768px)');
+		const handleMobileChange = (e: MediaQueryListEvent) => {
+			isMobile = e.matches;
+		};
+		mobileQuery.addEventListener('change', handleMobileChange);
+
 		if (!mediaQuery.matches) return;
 
-		const reveal = () => resetIdleTimer();
-		window.addEventListener('mousemove', reveal);
-		window.addEventListener('keydown', reveal);
+		const resetIdleTimer = () => {
+			idleHidden = false;
+			if (idleTimer) clearTimeout(idleTimer);
+			idleTimer = setTimeout(() => {
+				idleHidden = true;
+			}, IDLE_TIMEOUT);
+		};
+
+		window.addEventListener('mousemove', resetIdleTimer);
+		window.addEventListener('keydown', resetIdleTimer);
 		resetIdleTimer();
 
 		return () => {
-			window.removeEventListener('mousemove', reveal);
-			window.removeEventListener('keydown', reveal);
+			window.removeEventListener('mousemove', resetIdleTimer);
+			window.removeEventListener('keydown', resetIdleTimer);
+			mobileQuery.removeEventListener('change', handleMobileChange);
 			if (idleTimer) clearTimeout(idleTimer);
 		};
 	});
 </script>
 
 <svelte:window
-	onmousemove={resetIdleTimer}
-	onmousedown={resetIdleTimer}
-	ontouchstart={resetIdleTimer}
+	onmousemove={() => {
+		if (!mediaQuery?.matches) return;
+		idleHidden = false;
+		if (idleTimer) clearTimeout(idleTimer);
+		idleTimer = setTimeout(() => { idleHidden = true; }, IDLE_TIMEOUT);
+	}}
+	onmousedown={() => {
+		if (!mediaQuery?.matches) return;
+		idleHidden = false;
+		if (idleTimer) clearTimeout(idleTimer);
+		idleTimer = setTimeout(() => { idleHidden = true; }, IDLE_TIMEOUT);
+	}}
+	ontouchstart={() => { idleHidden = false; if (idleTimer) clearTimeout(idleTimer); }}
 />
 
-<div class="frontend-layout">
+<div class="frontend-layout" class:mobile={isMobile}>
 	<header class="site-header" class:hidden={idleHidden}>
 		<a href={resolve('/music', {})} class="site-logo">saltx</a>
 		<nav class="nav-links">
@@ -83,13 +101,33 @@
 		--border-color: rgba(0, 0, 0, 0.1);
 	}
 
+	/* 全局 main padding 流体化 */
+	:global(main) {
+		padding: clamp(5rem, 8vh, 8rem) clamp(1rem, 6vw, 6rem) clamp(2rem, 4vh, 4rem);
+	}
+
+	/* 移动端 main */
+	:global(.mobile main) {
+		padding: 5.5rem 1.5rem 3rem;
+	}
+
+	/* 移动端 header */
+	:global(.mobile) .site-header {
+		padding: 1.8rem 1.5rem;
+		letter-spacing: 0.2em;
+	}
+
+	:global(.mobile) .nav-links {
+		gap: 1.25rem;
+	}
+
 	.site-header {
 		position: fixed;
 		top: 0;
 		left: 0;
 		right: 0;
 		z-index: 10;
-		padding: 2.8rem 6rem;
+		padding: 2.8rem clamp(1rem, 6vw, 6rem);
 		font-size: 1rem;
 		letter-spacing: 0.42em;
 		text-transform: uppercase;

@@ -817,14 +817,14 @@
 		position: relative;
 		z-index: 1;
 		min-height: 100vh;
-		padding: 6.8rem 6rem 4.8rem;
+		padding: 6.8rem clamp(1rem, 6vw, 6rem) 4.8rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
 	.stage {
-		--panel-width: clamp(360px, 38vw, 440px);
+		--panel-width: clamp(300px, 38vw, 440px);
 		--panel-gap: calc(var(--panel-width) * 0.2);
 		width: min(calc(var(--panel-width) * 2 + var(--panel-gap)), 100%);
 		display: grid;
@@ -1155,5 +1155,41 @@
 		footer {
 			padding: 0 1.25rem 1.25rem;
 		}
+	}
+
+	.h5 main {
+		padding: 5.5rem 1.25rem 4rem;
+	}
+
+	.h5 .stage {
+		grid-template-columns: 1fr;
+		gap: 2rem;
+	}
+
+	.h5 .meta-column {
+		max-width: 360px;
+		height: auto;
+		min-height: 300px;
+	}
+
+	.h5 .meta-stack {
+		justify-content: center;
+	}
+
+	.h5 .track-info {
+		padding-top: 0;
+	}
+
+	.h5 h1 {
+		max-width: 12ch;
+		font-size: clamp(1.8rem, 7vw, 2.5rem);
+	}
+
+	.h5 .waveform {
+		height: 32px;
+	}
+
+	.h5 footer {
+		padding: 0 1.25rem 1.25rem;
 	}
 </style>
