@@ -86,14 +86,15 @@
 				{#each (data.allItems ?? []) as item (item.id)}
 					<div class="list-item">
 						<div class="list-item-meta">
-							<span class="list-item-category">{item.category}</span>
-							<span class="list-item-date">{new Date(item.created_at).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
+							<span class="list-item-tag">{item.category}</span>
+							<span class="list-item-sep">/</span>
+							<span class="list-item-date">{item.created_at.slice(0, 4)}.{item.created_at.slice(5, 7)}.{item.created_at.slice(8, 10)}</span>
 						</div>
-						<h3 class="list-item-title">{item.title}</h3>
+						<h3 class="list-item-title"># {item.title}</h3>
 					</div>
 				{/each}
 				{#if (data.allItems ?? []).length === 0}
-					<p class="list-empty">暂无公告</p>
+					<p class="list-empty">暂无动向</p>
 				{/if}
 			</div>
 		</div>
@@ -344,56 +345,75 @@
 	.list-section {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
 		padding-top: 1rem;
 	}
 
 	.list-item {
-		padding-bottom: 1.5rem;
+		padding: 1.5rem 0;
 		border-bottom: 1px solid var(--border-color);
 		transition: opacity 0.2s ease;
+		list-style: none;
 	}
 
 	.list-item:last-child {
 		border-bottom: none;
 	}
 
-	.list-item:hover {
-		opacity: 0.7;
+	.list-item:hover .list-item-tag,
+	.list-item:hover .list-item-sep,
+	.list-item:hover .list-item-date {
+		color: rgba(255, 255, 255, 0.7);
 	}
 
 	.list-item-meta {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: 0.5rem;
 		margin-bottom: 0.5rem;
 	}
 
-	.list-item-category {
-		font-size: 0.65rem;
-		font-weight: 600;
+	.list-item-tag {
+		font-size: 1.125rem;
+		font-weight: 300;
 		color: var(--text-muted);
 		letter-spacing: 0.05em;
 		text-transform: uppercase;
+		list-style: none;
+		font-family: "SF Pro Display", "Inter", "PingFang SC", "Helvetica Neue", sans-serif;
+	}
+
+	.list-item-sep {
+		font-size: 1.125rem;
+		color: var(--text-muted);
+		font-family: "SF Pro Display", "Inter", "PingFang SC", "Helvetica Neue", sans-serif;
+		font-weight: 300;
 	}
 
 	.list-item-date {
-		font-size: 0.75rem;
+		font-size: 1.125rem;
 		color: var(--text-muted);
+		font-family: "SF Pro Display", "Inter", "PingFang SC", "Helvetica Neue", sans-serif;
+		font-weight: 300;
 	}
 
 	.list-item-title {
-		font-size: 1rem;
+		font-size: 1.75rem;
 		font-weight: 500;
-		color: var(--text-primary);
-		margin: 0 0 0.5rem;
+		color: rgba(255, 255, 255, 0.9);
 		line-height: 1.4;
+		margin: 0;
+		transition: color 0.2s ease;
 	}
 
+	.list-item:hover .list-item-title {
+		color: rgba(255, 255, 255, 1);
+	}
 
 	.list-empty {
+		padding: 2rem 0;
 		font-size: 0.875rem;
 		color: var(--text-muted);
+		text-align: center;
 	}
 
 	@media (max-width: 768px) {
