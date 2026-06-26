@@ -15,7 +15,8 @@
 		{
 			"binding": "DB",
 			"database_name": "saltx",
-			"database_id": "cde17f3d-053a-48cc-9731-ad3a532e1cc1"
+			"database_id": "cde17f3d-053a-48cc-9731-ad3a532e1cc1",
+			"migrations_dir": "drizzle"
 		}
 	],
 	"r2_buckets": [

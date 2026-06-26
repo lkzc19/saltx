@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import { music } from '$lib/server/db/schema';
-import { like, count, and } from 'drizzle-orm';
+import { like, count, and, desc } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ url, platform }) => {
 	const db = getDb(platform!.env.DB);
@@ -25,6 +25,7 @@ export const load: PageServerLoad = async ({ url, platform }) => {
 		.select()
 		.from(music)
 		.where(where)
+		.orderBy(desc(music.created_at), desc(music.id))
 		.limit(pageSize)
 		.offset((page - 1) * pageSize);
 

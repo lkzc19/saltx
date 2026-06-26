@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 import { image } from '$lib/server/db/schema';
-import { like, count, and } from 'drizzle-orm';
+import { like, count, and, desc } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url, platform }) => {
@@ -22,6 +22,7 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 		.select()
 		.from(image)
 		.where(where)
+		.orderBy(desc(image.created_at), desc(image.id))
 		.limit(pageSize)
 		.offset((page - 1) * pageSize);
 

@@ -5,25 +5,18 @@ import { buildMusicFileKey } from '$lib/utils/music';
 import { eq } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
-function getExtension(filename: string): string {
-	const dot = filename.lastIndexOf('.');
-	return dot === -1 ? '' : filename.slice(dot + 1);
-}
-
 export const POST: RequestHandler = async ({ request, platform }) => {
 	const formData = await request.formData();
 
 	const name = formData.get('name')?.toString();
 	const artist = formData.get('artist')?.toString();
-	const version = formData.get('version')?.toString();
 	const file = formData.get('file') as File | null;
 	const coverFileKey = formData.get('cover_file_key')?.toString() || null;
 
-	if (!name || !artist || !version || !file) {
+	if (!name || !artist || !file) {
 		const missing = [
 			!name && 'name',
 			!artist && 'artist',
-			!version && 'version',
 			!file && 'file'
 		]
 			.filter(Boolean)
@@ -32,8 +25,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	}
 
 	const id = nanoid8();
-	const ext = getExtension(file.name);
-	const fileKey = buildMusicFileKey(id, version, ext);
+	const fileKey = buildMusicFileKey(id, file.name);
 
 	const bucket = platform!.env.BUCKET;
 	const db = getDb(platform!.env.DB);
@@ -48,8 +40,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			id,
 			name,
 			artist,
-			version,
-			extension: ext,
+			file_key: fileKey,
 			cover_file_key: coverFileKey
 		})
 		.returning()
@@ -71,7 +62,6 @@ export const PUT: RequestHandler = async ({ url, request, platform }) => {
 	const artist = formData.get('artist')?.toString();
 	const coverFileKey = formData.get('cover_file_key')?.toString();
 	const newFile = formData.get('file') as File | null;
-	const newVersion = formData.get('version')?.toString();
 
 	const updates: Record<string, string | null> = {};
 	if (name) updates.name = name;
@@ -80,10 +70,8 @@ export const PUT: RequestHandler = async ({ url, request, platform }) => {
 	if (coverFileKey !== undefined) updates.cover_file_key = coverFileKey || null;
 
 	if (newFile) {
-		const newExt = getExtension(newFile.name);
-		const version = newVersion || existing.version;
-		const oldKey = buildMusicFileKey(existing.id, existing.version, existing.extension);
-		const newKey = buildMusicFileKey(existing.id, version, newExt);
+		const oldKey = existing.file_key;
+		const newKey = buildMusicFileKey(existing.id, newFile.name);
 
 		const bucket = platform!.env.BUCKET;
 		await bucket.put(newKey, await newFile.arrayBuffer(), {
@@ -92,8 +80,7 @@ export const PUT: RequestHandler = async ({ url, request, platform }) => {
 		if (oldKey !== newKey) {
 			await bucket.delete(oldKey);
 		}
-		updates.version = version;
-		updates.extension = newExt;
+		updates.file_key = newKey;
 	}
 
 	updates.updated_at = new Date().toISOString();
@@ -117,8 +104,7 @@ export const DELETE: RequestHandler = async ({ url, platform }) => {
 	if (!existing) return json({ error: '音乐不存在' }, { status: 404 });
 
 	const bucket = platform!.env.BUCKET;
-	const fileKey = buildMusicFileKey(existing.id, existing.version, existing.extension);
-	await bucket.delete(fileKey);
+	await bucket.delete(existing.file_key);
 
 	await db.delete(music).where(eq(music.id, id));
 

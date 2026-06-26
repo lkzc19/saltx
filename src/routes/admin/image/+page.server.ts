@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
 import { image } from '$lib/server/db/schema';
-import { like, count, and } from 'drizzle-orm';
+import { like, count, and, desc } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ url, platform }) => {
 	const db = getDb(platform!.env.DB);
@@ -21,6 +21,7 @@ export const load: PageServerLoad = async ({ url, platform }) => {
 		.select()
 		.from(image)
 		.where(where)
+		.orderBy(desc(image.created_at), desc(image.id))
 		.limit(pageSize)
 		.offset((page - 1) * pageSize);
 
