@@ -813,11 +813,11 @@
 		pointer-events: none;
 	}
 
+
 	main {
 		position: relative;
 		z-index: 1;
 		min-height: 100vh;
-		padding: 6.8rem clamp(1rem, 6vw, 6rem) 4.8rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;

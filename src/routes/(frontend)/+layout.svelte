@@ -103,7 +103,7 @@
 
 	/* 全局 main padding 流体化 */
 	:global(main) {
-		padding: clamp(5rem, 8vh, 8rem) clamp(1rem, 6vw, 6rem) clamp(2rem, 4vh, 4rem);
+		padding: clamp(5rem, 8vh, 8rem) clamp(2rem, 10vw, 10rem) clamp(2rem, 4vh, 4rem);
 	}
 
 	/* 移动端 main */
@@ -127,7 +127,7 @@
 		left: 0;
 		right: 0;
 		z-index: 10;
-		padding: 2.8rem clamp(1rem, 6vw, 6rem);
+		padding: 2.8rem clamp(2rem, 10vw, 10rem);
 		font-size: 1rem;
 		letter-spacing: 0.42em;
 		text-transform: uppercase;

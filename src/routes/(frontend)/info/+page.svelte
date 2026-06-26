@@ -113,9 +113,9 @@
 		color: var(--text-primary);
 	}
 
+
 	main {
 		min-height: 100vh;
-		padding: 8rem 6rem 4rem;
 		display: flex;
 		align-items: flex-start;
 		justify-content: center;
