@@ -1,0 +1,17 @@
+@theme {
+  --color-cf: var(--color-orange-500);
+
+  --color-bg-primary: var(--color-zinc-100);
+  --color-bg-secondary: var(--color-zinc-50);
+  --color-bg-primary-hover: var(--color-zinc-200);
+  --color-bg-secondary-hover: var(--color-zinc-100);
+  --color-border-primary: var(--color-zinc-200);
+  --color-border-secondary: var(--color-zinc-100);
+
+  --color-fg: var(--color-white);
+
+  --color-text-primary: var(--color-zinc-700);
+  --color-text-primary-hover: var(--color-zinc-800);
+  --color-text-disabled: var(--color-zinc-400);
+  --color-error: var(--color-rose-500);
+}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '$lib/styles/base.css';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';

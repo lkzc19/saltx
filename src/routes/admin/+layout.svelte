@@ -1,4 +1,5 @@
 <script lang="ts">
+	import './admin.css';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
